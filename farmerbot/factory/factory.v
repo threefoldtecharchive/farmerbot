@@ -8,21 +8,21 @@ import threefoldtech.farmerbot.powermanagers
 import threefoldtech.farmerbot.node
 import regex
 
-pub fn run (path0 string)!system.DB{
+pub fn run(path0 string) !system.DB {
 
-	mut db:=system.DB{}
+	mut db := system.DB{}
 
 	mut path := pathlib.get_dir(path0, false)!	
 
 	//ADD THE KNOWN POWER MANAGERS
-	mut pwr1:=powermanagers.PowerManagerWakeOnLan{}
-	mut pwr2:=powermanagers.PowerManagerRacktivity{}
-	mut node:=node.NodeManager{}
+	mut pwr1 := powermanagers.PowerManagerWakeOnLan{}
+	mut pwr2 := powermanagers.PowerManagerRacktivity{}
+	mut node := node.NodeManager{}
 
-	mut re := regex.regex_opt(".*") or {panic(err)}
-	ar:=path.list(regex:re, recursive:true)!
+	mut re := regex.regex_opt(".*") or { panic(err) }
+	ar := path.list(regex:re, recursive:true)!
 	for p in ar{
-		if p.path.ends_with(".md"){
+		if p.path.ends_with(".md") {
 			mut parser := actionparser.file_parse(p.path)!
 			for mut action in parser.actions {
 				$if debug {
@@ -33,7 +33,7 @@ pub fn run (path0 string)!system.DB{
 					pwr1.execute(mut &db, mut &action)!
 					pwr2.execute(mut &db, mut &action)!
 				}
-				if name == "node"{
+				if name == "node" {
 					node.execute(mut &db, mut &action)!
 				}		
 			}					
