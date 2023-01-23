@@ -4,7 +4,7 @@
 
 example node definition, description is optional
 
-!!farmer.powermanager.model.powermanager
+!!farmer.powermanager.poweron
     name:'wol'
     devicetype:'wol'
     description:'is the default wake on lan implementation'

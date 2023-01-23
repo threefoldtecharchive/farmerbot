@@ -4,13 +4,11 @@
 
 example node definition, description is optional
 
-!!farmer.powermanager.model.powermanager
-    name:'wol'
-    devicetype:'wol'
-    description:'is the default wake on lan implementation'
 
-!!farmer.powermanager.model.powermanager
+!!farmer.tfgrid.notary.register_powermanager
     name:'pwr1'
+    farmid:''
+    farmname:''
     devicetype:'racktivity'
     description:'is power manager as racktivity'
     nrports:16

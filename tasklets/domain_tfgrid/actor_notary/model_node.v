@@ -1,17 +1,6 @@
-module system
+module actor_notary
 import freeflowuniverse.crystallib.params
 
-pub struct Farm{
-pub mut:
-	id u32
-	description string
-	params params.Params
-}
-
-enum PowerState{
-	on 
-	off
-}
 
 pub struct Node{
 pub mut:
@@ -24,6 +13,12 @@ pub mut:
 	params params.Params
 	powerstate PowerState
 }
+
+enum PowerState{
+	on 
+	off
+}
+
 
 // for the capacity planning
 // cru: virtual core
@@ -38,18 +33,15 @@ pub mut:
 	hru  u32
 }
 
-pub struct PowerManager{
-pub mut:
-	id string
-	farmid u32
-	description string
-	params params.Params
-}
 
-[heap]
-pub struct DB{
-pub mut:
-	nodes map[u32]&Node
-	powermanagers map[string]&PowerManager
-	farms map[u32]&Farm
-}
+
+// pub fn node_get(id u32){
+// 	mut node := FarmerBotNode{}
+// 	node.description = job.params.get_default("description","")!
+// 	node.farmid = job.params.get_u32("farmid")!
+// 	node.params = job.params
+// 	params.get("powermanager")!
+// 	params.get_u8("powermanager_port")!	
+// }
+
+
