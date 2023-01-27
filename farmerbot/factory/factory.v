@@ -1,40 +1,36 @@
 module factory
 
-import freeflowuniverse.crystallib.actionparser
+import freeflowuniverse.baobab.actions
 import freeflowuniverse.crystallib.pathlib
-import freeflowuniverse.crystallib.texttools
 import threefoldtech.farmerbot.system
-import threefoldtech.farmerbot.powermanagers
-import threefoldtech.farmerbot.node
+import threefoldtech.farmerbot.manager
+
+import log
 import regex
 
 pub fn run(path0 string) !system.DB {
-
+	// TODO change level base on environment variable
+	mut logger := log.Logger(&log.Log{ level: .info })
 	mut db := system.DB{}
 
 	mut path := pathlib.get_dir(path0, false)!	
 
-	//ADD THE KNOWN POWER MANAGERS
-	mut pwr1 := powermanagers.PowerManagerWakeOnLan{}
-	mut pwr2 := powermanagers.PowerManagerRacktivity{}
-	mut node := node.NodeManager{}
+	//ADD THE KNOWN MANAGERS
+	mut managers := map[string]manager.Manager{}
+	managers["power"] = manager.PowerManager{ logger: &logger }
+	managers["resource"] = manager.ResourceManager{ logger: &logger }
+	managers["node"] = manager.NodeManager{ logger: &logger }
 
 	mut re := regex.regex_opt(".*") or { panic(err) }
 	ar := path.list(regex:re, recursive:true)!
 	for p in ar{
 		if p.path.ends_with(".md") {
-			mut parser := actionparser.file_parse(p.path)!
+			mut parser := actions.file_parse(p.path)!
 			for mut action in parser.actions {
-				$if debug {
-					print(texttools.indent('$action\n ', '  |  '))
-				}
+				logger.debug("$action")
 				name := action.name.split(".")[0]
-				if name == "powermanager" {
-					pwr1.execute(mut &db, mut &action)!
-					pwr2.execute(mut &db, mut &action)!
-				}
-				if name == "node" {
-					node.execute(mut &db, mut &action)!
+				if name in managers {
+					managers[name].execute(mut &db, mut &action)!
 				}		
 			}					
 		}

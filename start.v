@@ -1,13 +1,13 @@
 module main
 
-// import os
 import threefoldtech.farmerbot.factory
+
 import os
 
 const testpath = os.dir(@FILE) + '/example_data'
 
 fn do() ! {
-	mut db:=factory.run(testpath)!
+	mut db := factory.run(testpath)!
 	println(db)
 }
 

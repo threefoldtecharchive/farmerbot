@@ -1,9 +1,10 @@
-module powermanagers
-import freeflowuniverse.crystallib.actionparser
+module manager
+
+import freeflowuniverse.baobab.actions
 import threefoldtech.farmerbot.system
 
 
-pub fn dataset(mut bot &system.DB, mut action &actionparser.Action) !{
+pub fn data_set(mut db &system.DB, mut action &actions.Action) !{
 
 	// mut node := system.Node{}
 	// node.id = action.params.get_u32("id")!
@@ -12,6 +13,4 @@ pub fn dataset(mut bot &system.DB, mut action &actionparser.Action) !{
 	// node.powermanager = action.params.get("powermanager")!
 	// node.powermanager_port = action.params.get_u8("powermanager_port")!
 	// db.nodes[node.id]=&node
-
 }
-

@@ -7,7 +7,7 @@
     mru_min:1
     hru_min:1
     sru_min:1   
-    node_exclude:3,4 //means list of nodes which cannnot be used
+    node_exclude:3,4
     
 
 !!node.find
