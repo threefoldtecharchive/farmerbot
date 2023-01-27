@@ -11,28 +11,27 @@ mut:
 	logger &log.Logger
 }
 
-
-//init the data from the node and put in Database
-// !!node.define
-//     description:''
-//     id:3
-//     farmid:3
-//     powermanager:'pwr1'
-//     powermanager_port:0
 pub fn (mut n NodeManager) execute(mut db &system.DB, mut action &actions.Action) ! {
-	if action.names()[1] == "define" {
+	if action.name == "farmerbot.node.define" {
 		n.data_set(mut db, mut action)!
 	}
 }
 
 fn (mut n NodeManager) data_set(mut db &system.DB, mut action &actions.Action) ! {
 	n.logger.debug("${action.names()[1]}")
-	if action.names()[1] == "define" {
-		mut node := system.Node{}
-		node.id = action.params.get_u32("id")!
-		node.description = action.params.get_default("description", "")!
-		node.farmid = action.params.get_u32("farmid")!
-		node.params = action.params
-		db.nodes[node.id] = &node
+	mut node := system.Node {
+		id: action.params.get_u32("id")!
+		description: action.params.get_default("description", "")!
+		farmid: action.params.get_u32("farmid")!
+		capacity_available: system.Capacity {
+			cru: action.params.get_u64("cru")!
+			sru: action.params.get_kilobytes("sru")!
+			mru: action.params.get_kilobytes("mru")!
+			hru: action.params.get_kilobytes("hru")!
+		}
+		params: action.params
+		powerstate: .on
 	}
+
+	db.nodes[node.id] = &node
 }

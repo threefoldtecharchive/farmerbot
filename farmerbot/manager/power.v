@@ -1,6 +1,7 @@
 module manager
 
 import freeflowuniverse.baobab.actions
+import freeflowuniverse.baobab.jobs
 import threefoldtech.farmerbot.system
 
 import log
@@ -11,36 +12,22 @@ mut:
 	logger &log.Logger
 }
 
-pub fn (mut a PowerManager) execute(mut db &system.DB, mut action &actions.Action) ! {
-	if !(a.is_relevant(mut db, mut action)!) {
+pub fn (mut a PowerManager) execute(mut db &system.DB, mut job &jobs.ActionJob) ! {
+	if !(a.is_relevant(mut db, mut job)!) {
 		return
-	}
-	if action.names()[1] == "define" {
-		data_set(mut db, mut action)!
-	}
-	if action.names()[1] == "poweron" {
-		a.poweron(mut db, mut action)!
 	}	
-	if action.names()[1] == "poweroff" {
-		a.poweroff(mut db, mut action)!
-	}		
 }
 
 
 //checks if the logic is relevant for this device
-fn (mut a PowerManager) is_relevant(mut db &system.DB, mut action &actions.Action) !bool {
-	//logic for wakeonlan
-	devicetype := action.params.get("devicetype")!
-	if devicetype == "wol" {
-		return true
-	}
+fn (mut a PowerManager) is_relevant(mut db &system.DB, mut job &jobs.ActionJob) !bool {
 	return false
 }
 
-fn (mut a PowerManager) poweron(mut db &system.DB, mut action &actions.Action) ! {
+fn (mut a PowerManager) poweron(mut db &system.DB, mut job &jobs.ActionJob) ! {
 	//logic for wakeonlan
 }
 
-fn (mut a PowerManager) poweroff(mut db &system.DB, mut action &actions.Action) ! {
+fn (mut a PowerManager) poweroff(mut db &system.DB, mut job &jobs.ActionJob) ! {
 	//logic for wakeonlan
 }

@@ -4,16 +4,21 @@
 
 example node definition, description is optional
 
-!!node.define
+!!farmerbot.node.define
     description:'this is a description'
     id:3 
     farmid:3
-    powermanager:'pwr1'
-    powermanager_port:2
     certified:yes
+    hru:1024GB
+    sru:512GB
+    cru:8
+    mru:16GB
 
-!!node.define
+!!farmerbot.node.define
     id:5
     farmid:3
-    powermanager:'wol'
     ethernetaddr:'aabbccddeeffgg'
+    hru:1024GB
+    sru:512GB
+    cru:8
+    mru:16GB

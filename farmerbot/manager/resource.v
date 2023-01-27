@@ -1,6 +1,8 @@
 module manager
 
 import freeflowuniverse.baobab.actions
+import freeflowuniverse.baobab.jobs
+
 import threefoldtech.farmerbot.system
 
 import log
@@ -12,22 +14,19 @@ mut:
 }
 
 
-pub fn (mut a ResourceManager) execute(mut db &system.DB, mut action &actions.Action) ! {
-	if !(a.is_relevant(mut db, mut action)!) {
+pub fn (mut a ResourceManager) execute(mut db &system.DB, mut job &jobs.ActionJob) ! {
+	if !(a.is_relevant(mut db, mut job)!) {
 		return
 	}
-	if action.names()[1] == "define" {
-		data_set(mut db, mut action)!
-		action.params.get("powermanager")!
-		action.params.get_u8("powermanager_port")!		
+	if job.action == "farmerbot.resourcemanager.findnode" {
+
 	}
 }
 
 
-//checks if the logic is relevant for this device
-fn (mut a ResourceManager) is_relevant(mut db &system.DB, mut action &actions.Action) !bool {
-	devicetype := action.params.get("devicetype")!
-	if devicetype == "wol" {
+fn (mut a ResourceManager) is_relevant(mut db &system.DB, mut job &jobs.ActionJob) !bool {
+	if job.action.starts_with("farmerbot.resourcemanager") { 
+		// TODO make sure all params are good
 		return true
 	}
 	return false

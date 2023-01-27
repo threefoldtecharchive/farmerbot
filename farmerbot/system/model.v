@@ -1,4 +1,5 @@
 module system
+
 import freeflowuniverse.crystallib.params
 
 pub struct Farm{
@@ -8,7 +9,7 @@ pub mut:
 	params params.Params
 }
 
-enum PowerState{
+pub enum PowerState{
 	on 
 	off
 }
@@ -32,24 +33,17 @@ pub mut:
 // sru: memory gbyte
 pub struct Capacity{
 pub mut:
-	cru	 u32 
-	sru  u32
-	mru  u32
-	hru  u32
-}
-
-pub struct PowerManager{
-pub mut:
-	id string
-	farmid u32
-	description string
-	params params.Params
+	cru	 u64 
+	sru  u64
+	mru  u64
+	hru  u64
 }
 
 [heap]
 pub struct DB{
 pub mut:
 	nodes map[u32]&Node
-	powermanagers map[string]&PowerManager
 	farms map[u32]&Farm
 }
+
+
