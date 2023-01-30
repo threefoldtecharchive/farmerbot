@@ -7,6 +7,7 @@ example node definition, description is optional
 !!farmerbot.node.define
     description:'this is a description'
     id:3 
+    twinid:2
     farmid:3
     certified:yes
     hru:1024GB
@@ -16,6 +17,7 @@ example node definition, description is optional
 
 !!farmerbot.node.define
     id:5
+    twinid:50
     farmid:3
     ethernetaddr:'aabbccddeeffgg'
     hru:1024GB
