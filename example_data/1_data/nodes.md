@@ -4,7 +4,7 @@
 
 example node definition, description is optional
 
-!!farmerbot.node.define
+!!farmerbot.nodemanager.define
     description:'this is a description'
     id:3 
     twinid:2
@@ -15,7 +15,7 @@ example node definition, description is optional
     cru:8
     mru:16GB
 
-!!farmerbot.node.define
+!!farmerbot.nodemanager.define
     id:5
     twinid:50
     farmid:3

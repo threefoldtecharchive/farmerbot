@@ -1,4 +1,4 @@
 # init nodes
 
-!!farmerbot.power.poweron id:3
+!!farmerbot.powermanager.poweron id:3
 
