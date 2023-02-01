@@ -17,7 +17,7 @@ const (
 
 [heap]
 pub struct NodeManager {
-	name string = "nodemanager"
+	name string = "farmerbot.nodemanager"
 	
 mut:
 	client &client.Client
@@ -129,11 +129,14 @@ fn (mut n NodeManager) find_node(mut job &jobs.ActionJob) ! {
 	}
 
 	// Return the node 
-	job.result.kwarg_add("nodeid", "${possible_nodes[0]}")
+	n.logger.debug("Found a node: ${possible_nodes[0]}")
+	job.result.kwarg_add("nodeid", "${possible_nodes[0].id}")
 
-	_ := n.client.job_new_schedule(
-		twinid: job.twinid, 
-		action:"farmerbot.powermanager", 
-		args:job.result, 
-		actionsource: job.action)!
+	if possible_nodes[0].powerstate == system.PowerState.off {
+		_ := n.client.job_new_schedule(
+			twinid: job.twinid,
+			action: system.job_power_on,
+			args: job.result,
+			actionsource: system.job_node_find)!
+	}
 }

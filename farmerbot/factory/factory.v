@@ -66,7 +66,7 @@ pub fn run_farmerbot(path string) ! {
 
 	// concurrently run actionrunner, processor, and external client
 	t := spawn update(mut &managers)
-	//spawn (&ar).run()
+	spawn (&ar).run()
 	spawn (&processor).run()
 	t.wait() !
 }

@@ -27,8 +27,8 @@ pub mut:
 	capacity_capability Capacity	   //capacity capability total on the node
 	capacity_used Capacity
 	cpu_load u8  					   //0..100 is percent in int about how heavy is CPU loaded
-	params params.Params
 	powerstate PowerState
+	params params.Params
 	twinconnection tw.RmbTwinClient
 }
 
@@ -39,6 +39,22 @@ pub fn (n &Node) can_claim_resources(cap Capacity) bool {
 
 pub fn (n &Node) capacity_free() Capacity {
 	return n.capacity_capability - n.capacity_used
+}
+
+fn (n &Node) str() string {
+	return "Node: {\n
+				id:${n.id},\n
+				twinid:${n.twinid},\n
+				farmid:${n.farmid},\n
+				description:${n.description},\n
+				certified:${n.certified},\n
+				dedicated:${n.dedicated},\n
+				publicip:${n.publicip},\n
+				capacity_capability:${n.capacity_capability},\n
+				capacity_used:${n.capacity_used},\n
+				cpu_load:${n.cpu_load}\n
+				powerstate:${n.powerstate}\n
+			}"
 }
 
 // for the capacity planning
