@@ -8,7 +8,11 @@ const testpath = os.dir(@FILE) + '/example_data'
 
 fn main() {
 	// TODO add arguments
-	factory.run_farmerbot(testpath) or { 
+	mut f := factory.new(testpath) or {
+		exit(1)
+	}
+	
+	f.run() or { 
 		exit(1)
 	}
 }

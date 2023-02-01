@@ -8,6 +8,7 @@ import threefoldtech.farmerbot.system
 import log
 
 // A manager is also an Actor in baobab
+[heap]
 pub interface Manager {
 	name string
 mut:
