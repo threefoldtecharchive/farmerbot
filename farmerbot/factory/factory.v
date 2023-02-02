@@ -89,10 +89,11 @@ pub fn (mut f Farmerbot) run() ! {
 	t.wait() !
 }
 
-pub fn new(path string) !&Farmerbot {
+pub fn new(path string, log_level log.Level) !&Farmerbot {
 	mut f := &Farmerbot {
 		path: path
 	}
+	f.logger.set_level(log_level)
 	f.init()!
 	return f
 }

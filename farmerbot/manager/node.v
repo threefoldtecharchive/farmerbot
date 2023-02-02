@@ -100,6 +100,10 @@ fn (mut n NodeManager) find_node(mut job &jobs.ActionJob) ! {
 		// Keep nodes with public ip
 		possible_nodes = possible_nodes.filter(it.publicip)
 	}
+	if dedicated {
+		// Keep dedicated nodes only AKA rent the full node
+		possible_nodes = possible_nodes.filter(it.dedicated && it.capacity_used.is_empty())
+	}
 	if node_exclude.len > 0 {
 		// Exclude the nodes that the user doesn't want
 		possible_nodes = possible_nodes.filter(!(it.id in node_exclude))

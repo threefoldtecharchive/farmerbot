@@ -20,7 +20,8 @@ example node definition, description is optional
     twinid:50
     farmid:3
     ethernetaddr:'aabbccddeeffgg'
-    hru:1024GB
-    sru:512GB
-    cru:8
-    mru:16GB
+    hru:2048GB
+    sru:1024GB
+    cru:16
+    mru:32GB
+

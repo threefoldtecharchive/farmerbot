@@ -42,19 +42,7 @@ pub fn (n &Node) capacity_free() Capacity {
 }
 
 fn (n &Node) str() string {
-	return "Node: {\n
-				id:${n.id},\n
-				twinid:${n.twinid},\n
-				farmid:${n.farmid},\n
-				description:${n.description},\n
-				certified:${n.certified},\n
-				dedicated:${n.dedicated},\n
-				publicip:${n.publicip},\n
-				capacity_capability:${n.capacity_capability},\n
-				capacity_used:${n.capacity_used},\n
-				cpu_load:${n.cpu_load}\n
-				powerstate:${n.powerstate}\n
-			}"
+	return "Node:{ id: ${n.id}, twinid: ${n.twinid}, farmid: ${n.farmid}, description: ${n.description}, certified: ${n.certified}, dedicated: ${n.dedicated}, publicip: ${n.publicip}, capacity_capability: ${n.capacity_capability}, capacity_used: ${n.capacity_used}, cpu_load: ${n.cpu_load}, powerstate: ${n.powerstate} }"
 }
 
 // for the capacity planning
@@ -75,6 +63,10 @@ pub fn (mut c Capacity) update(z &ZosStatistics) {
 	c.sru = z.sru
 	c.mru = z.mru
 	c.hru = z.mru
+}
+
+pub fn (c &Capacity) is_empty() bool {
+	return c.cru == 0 && c.sru == 0 && c.mru == 0 && c.hru == 0
 }
 
 fn (a Capacity) - (b Capacity) Capacity {
