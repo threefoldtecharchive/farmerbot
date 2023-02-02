@@ -3,7 +3,7 @@ Welcome to the farmerbot. The farmerbot is a service that a farmer can run allow
 
 The key feature of the farmerbot is powermanagement. The farmerbot will automatically shutdown nodes from its farm whenever possible and bring them back on when they are needed using Wake-on-Lan (WOL). It will try to maximize downtime as much as possible by recommending which nodes to use, this is one of the requests that the farmerbot can handle (asking for a node to deploy on).
 
-The behavior of the farmerbot is customizable through markup definition files.
+The behavior of the farmerbot is customizable through markup definition files. You can find an example [here](example_data/1_data/nodes.md). 
 
 ## Under the hood
 The farmerbot has been implemented using the actor model principles. It contains two actors that are able to execute jobs (actions that need to be executed by a specific actor).
@@ -37,3 +37,4 @@ Now you can run the following command:
 
 ## Running tests
 Make sure to go through the documentation under [tests](tests/README.md). 
+
