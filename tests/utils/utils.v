@@ -1,13 +1,80 @@
 module utils
 
+import freeflowuniverse.baobab.client { Client }
 import freeflowuniverse.baobab.jobs { ActionJob, ActionJobState }
 import freeflowuniverse.crystallib.params { Params }
+
+import threefoldtech.farmerbot.factory { Farmerbot }
+import threefoldtech.farmerbot.system { Capacity, Node}
+
+import log
+import os
+
+const (
+	testpath = os.dir(@FILE) + '/../../example_data'
+)
+
+pub type Test = fn (mut farmerbot Farmerbot, mut client Client) !
+
+pub struct TestEnvironment {
+pub mut:
+	tests map[string]Test
+}
+
+pub fn (mut t TestEnvironment) run(debug_log bool) {
+	mut logger := log.Logger(&log.Log{ level: .info })
+	mut client := client.new() or { return }
+
+	mut f := factory.new(testpath, if debug_log { .debug } else { .disabled }) or {
+		logger.error("Failed creating farmerbot: $err")
+		return
+	}
+	_ := spawn f.run()
+
+	logger.info("=======")
+	logger.info("|TESTS|")
+	logger.info("=======")
+
+	for testname, test in t.tests {
+		f.init_db() or {
+			logger.error("Failed resetting database")
+			return
+		}
+		client.reset() or {
+			logger.error("Failed resetting client")
+		 	return
+		}
+		test(mut f, mut client) or {
+			logger.error("[FAILED] ${testname}: $err")
+			continue
+		}
+		logger.info("[PASSED] ${testname}")
+	}
+}
+
+
+
+
+pub fn capacity_from_args(args &Params) !Capacity {
+	return Capacity {
+		hru: args.get_kilobytes("required_hru")!
+		sru: args.get_kilobytes("required_sru")!
+		mru: args.get_kilobytes("required_mru")!
+		cru: args.get_kilobytes("required_cru")!
+	}
+}
 
 pub fn add_required_resources(mut args Params, hru string, sru string, mru string, cru string) {
 	args.kwarg_add("required_hru", hru)
 	args.kwarg_add("required_sru", sru)
 	args.kwarg_add("required_mru", mru)
 	args.kwarg_add("required_cru", cru)
+}
+
+pub fn ensure_node_has_claimed_resources(node &Node, capacity &Capacity) ! {
+	if !(node.capacity_used == capacity) {
+		return error("Expected the used resources to be ${capacity}. It is ${node.capacity_used} instead!")
+	}
 }
 
 pub fn ensure_result_contains_u32(job &ActionJob, key string, value u32) ! {

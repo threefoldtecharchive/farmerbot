@@ -20,18 +20,18 @@ pub struct NodeManager {
 	name string = "farmerbot.nodemanager"
 	
 mut:
-	client &client.Client
+	client client.Client
 	db &system.DB
 	logger &log.Logger
 }
 
-pub fn (mut n NodeManager) init(mut action &actions.Action) ! {
+pub fn (mut n NodeManager) init(mut action actions.Action) ! {
 	if action.name == system.action_node_define {
 		n.data_set(mut action)!
 	}
 }
 
-pub fn (mut n NodeManager) execute(mut job &jobs.ActionJob) ! {
+pub fn (mut n NodeManager) execute(mut job jobs.ActionJob) ! {
 	if job.action == system.job_node_find {
 		n.find_node(mut job)!
 	}
@@ -39,19 +39,20 @@ pub fn (mut n NodeManager) execute(mut job &jobs.ActionJob) ! {
 
 pub fn (mut n NodeManager) update() ! {
 	// Update the resources by asking ZOS
-	// TODO experiment with multiple threads
 	for _, mut node in n.db.nodes {
-		response := node.twinconnection.send("zos.statistics.get", "") or {
+		stats := system.get_zos_statistics([node.twinid], 5) or {
+			// TODO modify powerstate as we get no response
 			n.logger.error("${node_manager_prefix} Failed getting resources from ZOS node: ${err}")
 			continue
 		}
-		statistics := json.decode(system.ZosStatisticsGetResponse, response.data)!
-		node.capacity_capability.update(statistics.total)
-		node.capacity_used.update(statistics.used)
+		node.capacity_capability.update(stats.total)
+		node.capacity_used.update(stats.used)
+		node.powerstate = .on
+		n.logger.debug("${node_manager_prefix} capacity updated for node:\n$node")
 	}
 }
 
-fn (mut n NodeManager) data_set(mut action &actions.Action) ! {
+fn (mut n NodeManager) data_set(mut action actions.Action) ! {
 	n.logger.info("${node_manager_prefix} Executing action: DATA_SET")
 	n.logger.debug("${node_manager_prefix} $action")
 	twinid := action.params.get_u32("twinid")!
@@ -63,20 +64,21 @@ fn (mut n NodeManager) data_set(mut action &actions.Action) ! {
 		description: action.params.get_default("description", "")!
 		farmid: action.params.get_u32("farmid")!
 		capacity_capability: system.Capacity {
-			cru: action.params.get_u64("cru")!
-			sru: action.params.get_kilobytes("sru")!
-			mru: action.params.get_kilobytes("mru")!
-			hru: action.params.get_kilobytes("hru")!
+			cru: action.params.get_u64_default("cru", 0)!
+			sru: action.params.get_kilobytes_default("sru", 0)!
+			mru: action.params.get_kilobytes_default("mru", 0)!
+			hru: action.params.get_kilobytes_default("hru", 0)!
 		}
-		params: action.params
+		publicip: action.params.get_default_false("publicip")
+		dedicated: action.params.get_default_false("dedicated")
+		certified: action.params.get_default_false("certified")
 		powerstate: .on
-		twinconnection: twinconnection
 	}
 
 	n.db.nodes[node.id] = &node
 }
 
-fn (mut n NodeManager) find_node(mut job &jobs.ActionJob) ! {
+fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	n.logger.info("${node_manager_prefix} Executing job: FIND_NODE")
 	n.logger.debug("${node_manager_prefix} $job")
 
@@ -85,10 +87,12 @@ fn (mut n NodeManager) find_node(mut job &jobs.ActionJob) ! {
 	publicip := job.args.get_default_false("publicip")
 	dedicated := job.args.get_default_false("dedicated")
 	node_exclude := job.args.get_list_u32("node_exclude")!
-	required_hru := job.args.get_kilobytes_default("required_hru", 0)!
-	required_sru := job.args.get_kilobytes_default("required_sru", 0)!
-	required_mru := job.args.get_kilobytes_default("required_mru", 0)!
-	required_cru := job.args.get_u64_default("required_cru", 0)!
+	required_capacity := system.Capacity {
+		hru: job.args.get_kilobytes_default("required_hru", 0)!
+		sru: job.args.get_kilobytes_default("required_sru", 0)!
+		mru: job.args.get_kilobytes_default("required_mru", 0)!
+		cru: job.args.get_u64_default("required_cru", 0)!
+	}
 	
 	// Lets find a node
 	mut possible_nodes := n.db.nodes.values()
@@ -103,6 +107,9 @@ fn (mut n NodeManager) find_node(mut job &jobs.ActionJob) ! {
 	if dedicated {
 		// Keep dedicated nodes only AKA rent the full node
 		possible_nodes = possible_nodes.filter(it.dedicated && it.capacity_used.is_empty())
+	} else {
+		// Don't care if it is dedicated. Though if the node is dedicated we have to rent the full node!
+		possible_nodes = possible_nodes.filter(!it.dedicated || required_capacity == it.capacity_capability)
 	}
 	if node_exclude.len > 0 {
 		// Exclude the nodes that the user doesn't want
@@ -110,13 +117,9 @@ fn (mut n NodeManager) find_node(mut job &jobs.ActionJob) ! {
 	}
 	// Keep nodes with enough resources
 	possible_nodes = possible_nodes.filter(
-		it.can_claim_resources(system.Capacity{ 
-				hru: required_hru, 
-				mru: required_mru, 
-				cru: required_cru, 
-				sru: required_sru 
-		})
+		it.can_claim_resources(required_capacity)
 	)
+
 	// Sort the nodes on power state (the ones that are ON first)
 	possible_nodes.sort_with_compare(fn (a &&system.Node, b &&system.Node) int {
          if a.powerstate == b.powerstate {
@@ -132,8 +135,15 @@ fn (mut n NodeManager) find_node(mut job &jobs.ActionJob) ! {
 		return error("Could not find a suitable node")
 	}
 
-	// Return the node 
 	n.logger.debug("Found a node: ${possible_nodes[0]}")
+	// claim the resources for 5 minutes (resources will be updated via the update method)
+	if dedicated {
+		// claim all capacity
+		possible_nodes[0].claim_resources(possible_nodes[0].capacity_capability)
+	} else {
+		possible_nodes[0].claim_resources(required_capacity)
+	}
+	// Result
 	job.result.kwarg_add("nodeid", "${possible_nodes[0].id}")
 
 	if possible_nodes[0].powerstate == system.PowerState.off {

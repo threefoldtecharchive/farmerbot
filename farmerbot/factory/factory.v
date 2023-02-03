@@ -17,11 +17,10 @@ import time
 [heap]
 pub struct Farmerbot {
 pub mut:
-	path string 
-	db system.DB = system.DB {}
+	path string
+	db &system.DB
 	logger &log.Logger = system.logger()
-	managers map[string]manager.Manager
-	jobclient client.Client = client.Client {}
+	managers map[string]&manager.Manager
 	processor processor.Processor = processor.Processor {}
 	actionrunner actionrunner.ActionRunner = actionrunner.ActionRunner {}
 }
@@ -37,7 +36,8 @@ fn (mut f Farmerbot) update() ! {
 
 pub fn (mut f Farmerbot) init_db() ! {
 	f.logger.info("Initializing database")
-	f.db = system.DB {}
+	f.db.nodes = map[u32]&system.Node {}
+	f.db.farms = map[u32]&system.Farm {}
 	mut path := pathlib.get_dir(f.path, false)!
 	mut re := regex.regex_opt(".*") or { panic(err) }
 	ar := path.list(regex:re, recursive:true)!
@@ -52,19 +52,20 @@ pub fn (mut f Farmerbot) init_db() ! {
 			}					
 		}
 	}
-	f.logger.debug("${f.db}")
+	f.logger.debug("${f.db.nodes}")
 }
 
-fn (mut f Farmerbot) init_managers() {
+fn (mut f Farmerbot) init_managers() ! {
 	f.logger.info("Initializing managers")
+	f.managers = map[string]&manager.Manager{}
 	mut node_manager := &manager.NodeManager {
-		client: &f.jobclient
-		db: &f.db 
+		client: client.new()!
+		db: f.db 
 		logger: f.logger 
 	}
-	mut power_manager := manager.PowerManager {
-		client: &f.jobclient
-		db: &f.db
+	mut power_manager := &manager.PowerManager {
+		client: client.new()!
+		db: f.db
 		logger: f.logger 
 	}
 
@@ -72,13 +73,14 @@ fn (mut f Farmerbot) init_managers() {
 	f.managers["nodemanager"] = node_manager
 	f.managers["powermanager"] = power_manager
 
-	f.actionrunner = actionrunner.new(f.jobclient, [node_manager, power_manager])
+	f.actionrunner = actionrunner.new(client.new()!, [node_manager, power_manager])
 }
 
 pub fn (mut f Farmerbot) init() ! {
-	f.jobclient = client.new()!
-	f.init_managers()
-	f.init_db()!
+	f.init_managers()!
+	f.init_db() or {
+		return error("Failed initializing the database: $err")
+	}
 }
 
 pub fn (mut f Farmerbot) run() ! {
@@ -86,14 +88,19 @@ pub fn (mut f Farmerbot) run() ! {
 	t := spawn (&f).update()
 	spawn (&f.actionrunner).run()
 	spawn (&f.processor).run()
-	t.wait() !
+	t.wait()!
+	f.logger.info("Stopping the farmerbot")
 }
 
 pub fn new(path string, log_level log.Level) !&Farmerbot {
 	mut f := &Farmerbot {
 		path: path
+		db: &system.DB{}
 	}
 	f.logger.set_level(log_level)
-	f.init()!
+	f.init() or {
+		f.logger.error("$err")
+		return err
+	}
 	return f
 }

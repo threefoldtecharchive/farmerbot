@@ -3,6 +3,11 @@ module system
 import freeflowuniverse.crystallib.params
 import freeflowuniverse.crystallib.twinclient as tw
 
+pub enum FarmerbotState as u8 {
+	stop
+	start
+}
+
 pub struct Farm{
 pub mut:
 	id u32
@@ -28,21 +33,19 @@ pub mut:
 	capacity_used Capacity
 	cpu_load u8  					   //0..100 is percent in int about how heavy is CPU loaded
 	powerstate PowerState
-	params params.Params
-	twinconnection tw.RmbTwinClient
+	//twinconnection tw.RmbTwinClient
 }
 
-pub fn (n &Node) can_claim_resources(cap Capacity) bool {
+pub fn (n &Node) can_claim_resources(cap &Capacity) bool {
 	free := n.capacity_free()
 	return free.cru >= cap.cru && free.mru >= cap.mru && free.hru >= cap.hru && free.sru >= cap.sru
+}
+pub fn (mut n Node) claim_resources(cap &Capacity) {
+	n.capacity_used.add(cap)
 }
 
 pub fn (n &Node) capacity_free() Capacity {
 	return n.capacity_capability - n.capacity_used
-}
-
-fn (n &Node) str() string {
-	return "Node:{ id: ${n.id}, twinid: ${n.twinid}, farmid: ${n.farmid}, description: ${n.description}, certified: ${n.certified}, dedicated: ${n.dedicated}, publicip: ${n.publicip}, capacity_capability: ${n.capacity_capability}, capacity_used: ${n.capacity_used}, cpu_load: ${n.cpu_load}, powerstate: ${n.powerstate} }"
 }
 
 // for the capacity planning
@@ -63,6 +66,13 @@ pub fn (mut c Capacity) update(z &ZosStatistics) {
 	c.sru = z.sru
 	c.mru = z.mru
 	c.hru = z.mru
+}
+
+pub fn (mut c Capacity) add(other &Capacity) {
+	c.cru += other.cru
+	c.sru += other.sru
+	c.mru += other.mru
+	c.hru += other.hru
 }
 
 pub fn (c &Capacity) is_empty() bool {
