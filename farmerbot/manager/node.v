@@ -40,13 +40,12 @@ pub fn (mut n NodeManager) execute(mut job jobs.ActionJob) ! {
 pub fn (mut n NodeManager) update() ! {
 	// Update the resources by asking ZOS
 	for _, mut node in n.db.nodes {
-		stats := system.get_zos_statistics([node.twinid], 5) or {
+		stats := system.get_zos_statistics([node.twinid], timeout_zos_rmb_requests) or {
 			// TODO modify powerstate as we get no response
 			n.logger.error("${node_manager_prefix} Failed getting resources from ZOS node: ${err}")
 			continue
 		}
-		node.capacity_capability.update(stats.total)
-		node.capacity_used.update(stats.used)
+		node.update_resources(stats)
 		node.powerstate = .on
 		n.logger.debug("${node_manager_prefix} capacity updated for node:\n$node")
 	}
@@ -55,19 +54,25 @@ pub fn (mut n NodeManager) update() ! {
 fn (mut n NodeManager) data_set(mut action actions.Action) ! {
 	n.logger.info("${node_manager_prefix} Executing action: DATA_SET")
 	n.logger.debug("${node_manager_prefix} $action")
+
 	twinid := action.params.get_u32("twinid")!
-	mut twinconnection := tw.RmbTwinClient{}
-	twinconnection.init([int(twinid)], timeout_zos_rmb_requests, retries_zos_rmb_requests)!
+	cpu_overprovision := action.params.get_u8_default("cpuoverprovision", 1)!
+	if cpu_overprovision < 1 || cpu_overprovision > 4 {
+		return error("cpuoverprovision should be a value between 1 and 4")
+	}
 	mut node := system.Node {
 		id: action.params.get_u32("id")!
 		twinid: twinid
 		description: action.params.get_default("description", "")!
 		farmid: action.params.get_u32("farmid")!
-		capacity_capability: system.Capacity {
-			cru: action.params.get_u64_default("cru", 0)!
-			sru: action.params.get_kilobytes_default("sru", 0)!
-			mru: action.params.get_kilobytes_default("mru", 0)!
-			hru: action.params.get_kilobytes_default("hru", 0)!
+		resources: system.ConsumableResources{
+			overprovision_cpu: cpu_overprovision
+			total: system.Capacity {
+				cru: action.params.get_u64_default("cru", 0)!
+				sru: action.params.get_kilobytes_default("sru", 0)!
+				mru: action.params.get_kilobytes_default("mru", 0)!
+				hru: action.params.get_kilobytes_default("hru", 0)!
+			}
 		}
 		publicip: action.params.get_default_false("publicip")
 		dedicated: action.params.get_default_false("dedicated")
@@ -106,10 +111,10 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	}
 	if dedicated {
 		// Keep dedicated nodes only AKA rent the full node
-		possible_nodes = possible_nodes.filter(it.dedicated && it.capacity_used.is_empty())
+		possible_nodes = possible_nodes.filter(it.dedicated && it.is_unused())
 	} else {
 		// Don't care if it is dedicated. Though if the node is dedicated we have to rent the full node!
-		possible_nodes = possible_nodes.filter(!it.dedicated || required_capacity == it.capacity_capability)
+		possible_nodes = possible_nodes.filter(!it.dedicated || required_capacity == it.resources.total)
 	}
 	if node_exclude.len > 0 {
 		// Exclude the nodes that the user doesn't want
@@ -139,7 +144,7 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	// claim the resources for 5 minutes (resources will be updated via the update method)
 	if dedicated {
 		// claim all capacity
-		possible_nodes[0].claim_resources(possible_nodes[0].capacity_capability)
+		possible_nodes[0].claim_resources(possible_nodes[0].resources.total)
 	} else {
 		possible_nodes[0].claim_resources(required_capacity)
 	}

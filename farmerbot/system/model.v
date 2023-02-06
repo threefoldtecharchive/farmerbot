@@ -3,6 +3,8 @@ module system
 import freeflowuniverse.crystallib.params
 import freeflowuniverse.crystallib.twinclient as tw
 
+import math { ceil }
+
 pub enum FarmerbotState as u8 {
 	stop
 	start
@@ -29,30 +31,41 @@ pub mut:
 	certified bool
 	dedicated bool
 	publicip bool
-	capacity_capability Capacity	   //capacity capability total on the node
-	capacity_used Capacity
-	cpu_load u8  					   //0..100 is percent in int about how heavy is CPU loaded
+	resources ConsumableResources
 	powerstate PowerState
-	//twinconnection tw.RmbTwinClient
+}
+
+pub fn (mut n Node) update_resources(zos_stats &ZosResourcesStatistics) {
+	n.resources.total.update(zos_stats.total)
+	n.resources.used.update(zos_stats.used)
+}
+
+pub fn (n &Node) is_unused() bool {
+	return n.resources.used.is_empty()
 }
 
 pub fn (n &Node) can_claim_resources(cap &Capacity) bool {
 	free := n.capacity_free()
-	return free.cru >= cap.cru && free.mru >= cap.mru && free.hru >= cap.hru && free.sru >= cap.sru
+	return n.resources.total.cru >= cap.cru && free.cru >= cap.cru && free.mru >= cap.mru && free.hru >= cap.hru && free.sru >= cap.sru
 }
+
 pub fn (mut n Node) claim_resources(cap &Capacity) {
-	n.capacity_used.add(cap)
+	n.resources.used.add(cap)
 }
 
 pub fn (n &Node) capacity_free() Capacity {
-	return n.capacity_capability - n.capacity_used
+	mut total := n.resources.total
+	total.cru = u64(ceil(f64(total.cru) * f64(n.resources.overprovision_cpu)))
+	return total - n.resources.used
 }
 
-// for the capacity planning
-// cru: virtual core
-// mru: memory mbyte
-// hru: memory gbyte
-// sru: memory gbyte
+pub struct ConsumableResources {
+pub mut:
+	overprovision_cpu f32  // how much we allow overprovisioning the CPU range: [1;3]
+	total Capacity
+	used Capacity
+}
+
 pub struct Capacity{
 pub mut:
 	cru	 u64 
@@ -61,7 +74,7 @@ pub mut:
 	hru  u64
 }
 
-pub fn (mut c Capacity) update(z &ZosStatistics) {
+pub fn (mut c Capacity) update(z &ZosResources) {
 	c.cru = z.cru
 	c.sru = z.sru
 	c.mru = z.mru

@@ -39,7 +39,7 @@ pub mut:
 	client redisclient.Redis
 }
 
-pub fn get_zos_statistics(dst []u32, exp u64) !ZosStatisticsGetResponse {
+pub fn get_zos_statistics(dst []u32, exp u64) !ZosResourcesStatistics {
 	mut rmb := RmbClient{}
 	rmb.client = redisclient.get('localhost:6379')!
 	rmb.msg = RmbMessage {
@@ -58,12 +58,12 @@ pub fn get_zos_statistics(dst []u32, exp u64) !ZosStatisticsGetResponse {
 	if response.err.message != "" {
 		return error("${response.err.message}")
 	}
-	stats := json.decode(ZosStatisticsGetResponse, base64.decode_str(response.dat))!
+	stats := json.decode(ZosResourcesStatistics, base64.decode_str(response.dat))!
 	return stats
 }
 
 
-pub struct ZosStatistics {
+pub struct ZosResources {
 pub mut:
 	cru u64
 	sru u64
@@ -72,8 +72,8 @@ pub mut:
 	ipv4u u64
 }
 
-pub struct ZosStatisticsGetResponse {
+pub struct ZosResourcesStatistics {
 pub mut:
-	total ZosStatistics
-	used ZosStatistics
+	total ZosResources
+	used ZosResources
 }

@@ -72,8 +72,8 @@ pub fn add_required_resources(mut args Params, hru string, sru string, mru strin
 }
 
 pub fn ensure_node_has_claimed_resources(node &Node, capacity &Capacity) ! {
-	if !(node.capacity_used == capacity) {
-		return error("Expected the used resources to be ${capacity}. It is ${node.capacity_used} instead!")
+	if !(node.resources.used == capacity) {
+		return error("Expected the used resources to be ${capacity}. It is ${node.resources.used} instead!")
 	}
 }
 

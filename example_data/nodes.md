@@ -13,12 +13,12 @@ example node definition, description is optional
     sru:512GB
     cru:8
     mru:16GB
+    cpuoverprovision:2
 
 !!farmerbot.nodemanager.define
     id:5
     twinid:50
     farmid:3
-    ethernetaddr:'aabbccddeeffgg'
     hru:2048GB
     sru:1024GB
     cru:16
