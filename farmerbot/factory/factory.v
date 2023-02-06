@@ -37,7 +37,7 @@ fn (mut f Farmerbot) update() ! {
 pub fn (mut f Farmerbot) init_db() ! {
 	f.logger.info("Initializing database")
 	f.db.nodes = map[u32]&system.Node {}
-	f.db.farms = map[u32]&system.Farm {}
+	f.db.farm = &system.Farm {}
 	mut path := pathlib.get_dir(f.path, false)!
 	mut re := regex.regex_opt(".*") or { panic(err) }
 	ar := path.list(regex:re, recursive:true)!
@@ -58,6 +58,11 @@ pub fn (mut f Farmerbot) init_db() ! {
 fn (mut f Farmerbot) init_managers() ! {
 	f.logger.info("Initializing managers")
 	f.managers = map[string]&manager.Manager{}
+	mut farm_manager := &manager.FarmManager {
+		client: client.new()!
+		db: f.db 
+		logger: f.logger 
+	}
 	mut node_manager := &manager.NodeManager {
 		client: client.new()!
 		db: f.db 
@@ -70,6 +75,7 @@ fn (mut f Farmerbot) init_managers() ! {
 	}
 
 	// ADD NEW MANAGERS HERE
+	f.managers["farmmanager"] = farm_manager
 	f.managers["nodemanager"] = node_manager
 	f.managers["powermanager"] = power_manager
 

@@ -8,7 +8,6 @@ example node definition, description is optional
     description:'this is a description'
     id:3 
     twinid:2
-    farmid:3
     hru:1024GB
     sru:512GB
     cru:8
@@ -18,7 +17,6 @@ example node definition, description is optional
 !!farmerbot.nodemanager.define
     id:5
     twinid:50
-    farmid:3
     hru:2048GB
     sru:1024GB
     cru:16
@@ -27,8 +25,7 @@ example node definition, description is optional
 !!farmerbot.nodemanager.define
     id:8
     twinid:54
-    farmid:3
-    publicip:true
+    public_config:true
     hru:2048GB
     sru:1024GB
     cru:16
@@ -37,8 +34,7 @@ example node definition, description is optional
 !!farmerbot.nodemanager.define
     id:20
     twinid:105
-    farmid:3
-    publicip:true
+    public_config:true
     dedicated:1
     certified:yes
     hru:2048GB
@@ -49,9 +45,16 @@ example node definition, description is optional
 !!farmerbot.nodemanager.define
     id:25
     twinid:112
-    farmid:3
     certified:yes
     hru:2048GB
     sru:1024GB
     cru:16
     mru:32GB
+
+
+!!farmerbot.powermanager.configure
+    wake_up_threshold:80
+
+!!farmerbot.farmmanager.define
+    id:3
+    public_ips:2

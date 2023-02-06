@@ -1,4 +1,4 @@
-Configuration 
+Configuration
 !!farmerbot.nodemanager.define
     id:29
     twinid:11

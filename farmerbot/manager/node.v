@@ -46,6 +46,12 @@ pub fn (mut n NodeManager) update() ! {
 			continue
 		}
 		node.update_resources(stats)
+		node.public_config = system.zos_has_public_config([node.twinid], timeout_zos_rmb_requests) or {
+			// TODO modify powerstate as we get no response
+			n.logger.error("${node_manager_prefix} Failed getting publicip from ZOS node: ${err}")
+			continue
+		}
+
 		node.powerstate = .on
 		n.logger.debug("${node_manager_prefix} capacity updated for node:\n$node")
 	}
@@ -64,7 +70,6 @@ fn (mut n NodeManager) data_set(mut action actions.Action) ! {
 		id: action.params.get_u32("id")!
 		twinid: twinid
 		description: action.params.get_default("description", "")!
-		farmid: action.params.get_u32("farmid")!
 		resources: system.ConsumableResources{
 			overprovision_cpu: cpu_overprovision
 			total: system.Capacity {
@@ -74,7 +79,7 @@ fn (mut n NodeManager) data_set(mut action actions.Action) ! {
 				hru: action.params.get_kilobytes_default("hru", 0)!
 			}
 		}
-		publicip: action.params.get_default_false("publicip")
+		public_config: action.params.get_default_false("public_config")
 		dedicated: action.params.get_default_false("dedicated")
 		certified: action.params.get_default_false("certified")
 		powerstate: .on
@@ -89,7 +94,8 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 
 	// Parse args
 	certified := job.args.get_default_false("certified")
-	publicip := job.args.get_default_false("publicip")
+	public_config := job.args.get_default_false("public_config")
+	public_ips := job.args.get_u32_default("public_ips", 0)!
 	dedicated := job.args.get_default_false("dedicated")
 	node_exclude := job.args.get_list_u32("node_exclude")!
 	required_capacity := system.Capacity {
@@ -101,13 +107,22 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	
 	// Lets find a node
 	mut possible_nodes := n.db.nodes.values()
+	if public_ips > 0 {
+		mut public_ips_used_by_nodes := u64(0)
+		for node in n.db.nodes.values() {
+			public_ips_used_by_nodes += node.public_ips_used
+		}
+		if public_ips_used_by_nodes + public_ips > n.db.farm.public_ips {
+			return error("No more public ips available")
+		}
+	}
 	if certified {
 		// Keep certified nodes
 		possible_nodes = possible_nodes.filter(it.certified)
 	}
-	if publicip {
+	if public_config {
 		// Keep nodes with public ip
-		possible_nodes = possible_nodes.filter(it.publicip)
+		possible_nodes = possible_nodes.filter(it.public_config)
 	}
 	if dedicated {
 		// Keep dedicated nodes only AKA rent the full node
@@ -141,12 +156,16 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	}
 
 	n.logger.debug("Found a node: ${possible_nodes[0]}")
-	// claim the resources for 5 minutes (resources will be updated via the update method)
+	// claim the resources until next update of the data
 	if dedicated {
 		// claim all capacity
 		possible_nodes[0].claim_resources(possible_nodes[0].resources.total)
 	} else {
 		possible_nodes[0].claim_resources(required_capacity)
+	}
+	// claim public ips until next update of the data
+	if public_ips > 0 {
+		possible_nodes[0].public_ips_used += public_ips
 	}
 	// Result
 	job.result.kwarg_add("nodeid", "${possible_nodes[0].id}")

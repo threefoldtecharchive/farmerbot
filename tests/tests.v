@@ -1,6 +1,9 @@
 module main
 
-import utils { add_required_resources, capacity_from_args, ensure_no_error, ensure_node_has_claimed_resources, ensure_result_contains_u32, Test, TestEnvironment }
+import utils { 
+	add_required_resources, capacity_from_args, ensure_error_message, ensure_no_error, ensure_node_has_claimed_resources, 
+	ensure_result_contains_u32, Test, TestEnvironment 
+}
 import freeflowuniverse.baobab.client { Client }
 import freeflowuniverse.crystallib.params { Params }
 import threefoldtech.farmerbot.factory { Farmerbot }
@@ -59,12 +62,12 @@ fn test_find_node_required_resources_selecting_second_node(mut farmerbot Farmerb
 	ensure_node_has_claimed_resources(farmerbot.db.nodes[5], capacity_from_args(args)!)!
 }
 
-// Test finding a node that has a publicip
-fn test_find_node_with_public_ip(mut farmerbot Farmerbot, mut client Client) ! {
+// Test finding a node that has a public_config
+fn test_find_node_with_public_config(mut farmerbot Farmerbot, mut client Client) ! {
 	// prepare
 	mut args := Params {}
 	add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
-	args.kwarg_add("publicip", "1")
+	args.kwarg_add("public_config", "1")
 
 	// act
 	mut job := client.job_new_wait(
@@ -180,7 +183,7 @@ fn test_find_node_with_everything(mut farmerbot Farmerbot, mut client Client) ! 
 	add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 	args.kwarg_add("certified", "true")
 	args.kwarg_add("dedicated", "1")
-	args.kwarg_add("publicip", "1")
+	args.kwarg_add("public_config", "1")
 	args.kwarg_add("node_exclude", "3, 5")
 
 	// act
@@ -245,6 +248,53 @@ fn test_overprovisioning_cpu(mut farmerbot Farmerbot, mut client Client) ! {
 	ensure_result_contains_u32(&job_c, "nodeid", 5)!
 }
 
+// Test finding a node with 2 public ips
+// Farm has 2 public ips available so this job should succeed
+fn test_find_node_with_public_ips(mut farmerbot Farmerbot, mut client Client) ! {
+	// prepare
+	mut args := Params {}
+	add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
+	args.kwarg_add("public_ips", "2")
+
+	// act
+	mut job := client.job_new_wait(
+		twinid: client.twinid
+		action: system.job_node_find
+		args: args
+		actionsource: ""
+	) or {
+		return error("failed to create and wait for job")
+	}
+
+	// assert
+	ensure_no_error(&job)!
+	ensure_result_contains_u32(&job, "nodeid", 3)!
+}
+
+// Test finding a node with 3 public ips
+// Farm has 2 public ips available so this job should fail
+fn test_find_node_with_public_ips_fails(mut farmerbot Farmerbot, mut client Client) ! {
+	// prepare
+	mut args := Params {}
+	add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
+	args.kwarg_add("public_ips", "3")
+
+	// act
+	mut job := client.job_new_wait(
+		twinid: client.twinid
+		action: system.job_node_find
+		args: args
+		actionsource: ""
+	) or {
+		return error("failed to create and wait for job")
+	}
+
+	// assert
+	ensure_error_message(&job, "No more public ips available")!
+}
+
+
+
 fn main() {
 	mut fp := flag.new_flag_parser(os.args)
 	fp.application('Integration tests for the farmerbot')
@@ -261,12 +311,14 @@ fn main() {
 	tests["find_node_with_required_resources"] = test_find_node_required_resources
 	tests["find_node_with_required_resources_selecting_second_node"] = test_find_node_required_resources_selecting_second_node
 	tests["find_node_that_is_on_first"] = test_find_node_that_is_on_first
-	tests["find_node_with_public_ip"] = test_find_node_with_public_ip
+	tests["find_node_with_public_config"] = test_find_node_with_public_config
 	tests["find_node_dedicated"] = test_find_node_dedicated
 	tests["find_node_excluding_nodes"] = test_find_node_excluding_nodes
 	tests["find_node_certified"] = test_find_node_certified
 	tests["find_node_with_everything"] = test_find_node_with_everything
 	tests["find_node_overprovisioning"] = test_overprovisioning_cpu
+	tests["find_node_with_public_ips"] = test_find_node_with_public_ips
+	tests["find_node_with_public_ips_fails"] = test_find_node_with_public_ips_fails
 	
 	// ADD YOUR TESTS HERE
 	mut testenvironment := TestEnvironment {

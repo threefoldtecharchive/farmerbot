@@ -14,7 +14,7 @@ pub struct Farm{
 pub mut:
 	id u32
 	description string
-	params params.Params
+	public_ips u32
 }
 
 pub enum PowerState as u8 {
@@ -30,7 +30,8 @@ pub mut:
 	description string
 	certified bool
 	dedicated bool
-	publicip bool
+	public_config bool
+	public_ips_used u64
 	resources ConsumableResources
 	powerstate PowerState
 }
@@ -38,6 +39,7 @@ pub mut:
 pub fn (mut n Node) update_resources(zos_stats &ZosResourcesStatistics) {
 	n.resources.total.update(zos_stats.total)
 	n.resources.used.update(zos_stats.used)
+	n.public_ips_used = zos_stats.used.ipv4u
 }
 
 pub fn (n &Node) is_unused() bool {
@@ -104,6 +106,7 @@ fn (a Capacity) - (b Capacity) Capacity {
 [heap]
 pub struct DB{
 pub mut:
+	wake_up_threshold u8
 	nodes map[u32]&Node
-	farms map[u32]&Farm
+	farm &Farm
 }
