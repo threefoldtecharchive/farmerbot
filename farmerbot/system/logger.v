@@ -4,7 +4,6 @@ import log
 import os
 
 pub fn logger() &log.Logger {
-	println(os.environ()["FARMERBOT_LOG_LEVEL"].to_upper())
 	level := match os.environ()["FARMERBOT_LOG_LEVEL"].to_upper() {
 		"DEBUG" {
 			log.Level.debug
@@ -13,5 +12,10 @@ pub fn logger() &log.Logger {
 			log.Level.info
 		}
 	}
-	return &log.Logger(&log.Log{ level: level })
+	output_file := os.environ()["FARMERBOT_LOG_OUTPUT"]
+	mut l := &log.Log{ level: level }
+	if output_file != "" {
+		l.set_full_logpath(output_file)
+	}
+	return &log.Logger(l)
 }

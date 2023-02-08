@@ -7,6 +7,7 @@ import freeflowuniverse.crystallib.params { Params }
 import threefoldtech.farmerbot.factory { Farmerbot }
 import threefoldtech.farmerbot.system { Capacity, Node}
 
+import math
 import os
 
 const (
@@ -18,13 +19,18 @@ pub type Test = fn (mut farmerbot Farmerbot, mut client Client) !
 pub struct TestEnvironment {
 }
 
-pub fn (mut t TestEnvironment) run(test Test) ! {
+pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 	mut client := client.new() or { 
 		return error("Failed creating client: $err")
 	}
 
+	os.mkdir_all("/tmp/farmerbot", os.MkdirParams{})!
+
+	os.setenv("FARMERBOT_LOG_OUTPUT", "/tmp/farmerbot/${name}.log", true)
+	os.setenv("FARMERBOT_LOG_LEVEL", "DEBUG", true)
+
 	// TODO: output log to file
-	mut f := factory.new(testpath, .disabled) or {
+	mut f := factory.new(testpath) or {
 		return error("Failed creating farmerbot: $err")
 	}
 	t_ar := spawn (&f.actionrunner).run()
@@ -48,6 +54,10 @@ pub fn (mut t TestEnvironment) run(test Test) ! {
 	t_pr.wait()
 }
 
+pub fn wait_till_jobs_are_finished(actor string, mut client Client) ! {
+ 	for client.check_remaining_jobs(actor)! > 0 {
+	}
+}
 
 pub fn capacity_from_args(args &Params) !Capacity {
 	return Capacity {
@@ -55,6 +65,15 @@ pub fn capacity_from_args(args &Params) !Capacity {
 		sru: args.get_kilobytes("required_sru")!
 		mru: args.get_kilobytes("required_mru")!
 		cru: args.get_kilobytes("required_cru")!
+	}
+}
+
+pub fn put_usage_to_x_procent(mut node Node, x u32) {
+	node.resources.used = Capacity {
+		hru: u64(math.ceil(node.resources.total.hru * x / 100))
+		sru: u64(math.ceil(node.resources.total.sru * x / 100))
+		mru: u64(math.ceil(node.resources.total.mru * x / 100))
+		cru: u64(math.ceil(node.resources.total.cru * x / 100))
 	}
 }
 

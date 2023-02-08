@@ -30,7 +30,7 @@ pub fn (mut f FarmManager) init(mut action actions.Action) ! {
 pub fn (mut f FarmManager) execute(mut job jobs.ActionJob) ! {
 }
 
-pub fn (mut f FarmManager) update() ! {
+pub fn (mut f FarmManager) update() {
 }
 
 fn (mut f FarmManager) data_set(mut action actions.Action) ! {

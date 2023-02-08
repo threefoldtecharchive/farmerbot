@@ -12,7 +12,8 @@ import threefoldtech.farmerbot.system
 // Test finding a node with minimal required resources
 fn test_find_node_required_resources() {
 	mut testenvironment := TestEnvironment{}
-	testenvironment.run(fn (mut farmerbot Farmerbot, mut client Client) ! {
+	testenvironment.run("test_find_node_required_resources", 
+	fn (mut farmerbot Farmerbot, mut client Client) ! {
 		// prepare 
 		mut args := Params {}
 		add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
@@ -38,7 +39,8 @@ fn test_find_node_required_resources() {
 //   The required resources is more then what the first nodes can handle
  fn test_find_node_required_resources_selecting_second_node() {
 	mut testenvironment := TestEnvironment{}
-	testenvironment.run(fn (mut farmerbot Farmerbot, mut client Client) ! {
+	testenvironment.run("test_find_node_required_resources_selecting_second_node", 
+	fn (mut farmerbot Farmerbot, mut client Client) ! {
 		// prepare
 		node_id_5_capacity := farmerbot.db.nodes[5].resources.total
 		mut args := Params {}
@@ -68,7 +70,8 @@ fn test_find_node_required_resources() {
 // Test finding a node that has a public_config
 fn test_find_node_with_public_config() {
 	mut testenvironment := TestEnvironment{}
-	testenvironment.run(fn (mut farmerbot Farmerbot, mut client Client) ! {
+	testenvironment.run("test_find_node_with_public_config", 
+	fn (mut farmerbot Farmerbot, mut client Client) ! {
 		// prepare
 		mut args := Params {}
 		add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
@@ -93,7 +96,8 @@ fn test_find_node_with_public_config() {
 // Test finding a node with minimum amount of resources and renting the full node (it should not be used)
 fn test_find_node_dedicated() {
 	mut testenvironment := TestEnvironment{}
-	testenvironment.run(fn (mut farmerbot Farmerbot, mut client Client) ! {
+	testenvironment.run("test_find_node_dedicated", 
+	fn (mut farmerbot Farmerbot, mut client Client) ! {
 		// prepare
 		mut args := Params {}
 		add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
@@ -119,7 +123,8 @@ fn test_find_node_dedicated() {
 // The required resources will fit on any node but we exclude node 3 and 5
 fn test_find_node_excluding_nodes() {
 	mut testenvironment := TestEnvironment{}
-	testenvironment.run(fn (mut farmerbot Farmerbot, mut client Client) ! {
+	testenvironment.run("test_find_node_excluding_nodes",
+	fn (mut farmerbot Farmerbot, mut client Client) ! {
 		// prepare
 		mut args := Params {}
 		add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
@@ -146,7 +151,8 @@ fn test_find_node_excluding_nodes() {
 // not asking for dedicated node nor asking for al resources
  fn test_find_node_certified() {
 	mut testenvironment := TestEnvironment{}
-	testenvironment.run(fn (mut farmerbot Farmerbot, mut client Client) ! {
+	testenvironment.run("test_find_node_certified",
+	fn (mut farmerbot Farmerbot, mut client Client) ! {
  		// prepare
 		mut args := Params {}
 		add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
@@ -172,7 +178,8 @@ fn test_find_node_excluding_nodes() {
 // Required resources can fit on node with id 3 but it is offline so it should be 5
 fn test_find_node_that_is_on_first() {
 	mut testenvironment := TestEnvironment{}
-	testenvironment.run(fn (mut farmerbot Farmerbot, mut client Client) ! {
+	testenvironment.run("test_find_node_that_is_on_first",
+	fn (mut farmerbot Farmerbot, mut client Client) ! {
 		// prepare
 		farmerbot.db.nodes[3].powerstate = .off
 		mut args := Params {}
@@ -197,7 +204,8 @@ fn test_find_node_that_is_on_first() {
 // Test finding a node: testing a bit of everything together
 fn test_find_node_with_everything() {
 	mut testenvironment := TestEnvironment{}
-	testenvironment.run(fn (mut farmerbot Farmerbot, mut client Client) ! {
+	testenvironment.run("test_find_node_with_everything",
+	fn (mut farmerbot Farmerbot, mut client Client) ! {
 		// prepare
 		mut args := Params {}
 		add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
@@ -227,7 +235,8 @@ fn test_find_node_with_everything() {
 // first two jobs should be able to fit onto node 3 (with overprovisioning)
 fn test_overprovisioning_cpu() {
 	mut testenvironment := TestEnvironment{}
-	testenvironment.run(fn (mut farmerbot Farmerbot, mut client Client) ! {
+	testenvironment.run("test_overprovisioning_cpu", 
+	fn (mut farmerbot Farmerbot, mut client Client) ! {
 		// prepare
 		mut args_a := Params {}
 		add_required_resources(mut args_a, "100GB", "100GB", "4GB", "8")
@@ -276,7 +285,8 @@ fn test_overprovisioning_cpu() {
 // Farm has 2 public ips available so this job should succeed
 fn test_find_node_with_public_ips() {
 	mut testenvironment := TestEnvironment{}
-	testenvironment.run(fn (mut farmerbot Farmerbot, mut client Client) ! {
+	testenvironment.run("test_find_node_with_public_ips",
+	fn (mut farmerbot Farmerbot, mut client Client) ! {
 		// prepare
 		mut args := Params {}
 		add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
@@ -302,7 +312,8 @@ fn test_find_node_with_public_ips() {
 // Farm has 2 public ips available so this job should fail
 fn test_find_node_with_public_ips_fails() {
 	mut testenvironment := TestEnvironment{}
-	testenvironment.run(fn (mut farmerbot Farmerbot, mut client Client) ! {
+	testenvironment.run("test_find_node_with_public_ips_fails", 
+	fn (mut farmerbot Farmerbot, mut client Client) ! {
 		// prepare
 		mut args := Params {}
 		add_required_resources(mut args, "500GB", "100GB", "4GB", "2")

@@ -21,5 +21,5 @@ mut:
 	// execute a job
 	execute(mut action jobs.ActionJob) !
 	// this will be run every 5 minutes
-	update() !
+	update()
 }

@@ -36,49 +36,16 @@ pub fn (mut p PowerManager) execute(mut job jobs.ActionJob) ! {
 	}
 }
 
-pub fn (mut p PowerManager) update() ! {
-	p.handle_timeouts()
-	p.do_power_management()!
-}
-
-fn (mut p PowerManager) handle_timeouts() {
-	for mut node in p.db.nodes.values() {
-		// PING the node to see if it is on
-		_ := system.get_zos_system_version([node.twinid], 5) or {
-			if node.powerstate == .wakingup {
-				if node.powerstate_timeout > 1 {
-					node.powerstate_timeout -= 1
-					continue
-				}
-				// TODO maybe no longer use the node until it comes back on
-				p.logger.error("Timeout on waking up the node with id ${node.id}. Putting its state back to off")
-			}
-			node.powerstate = .off
-			continue
-		}
-		if node.powerstate == .shuttingdown {
-			if node.powerstate_timeout > 1 {
-				node.powerstate_timeout -= 1
-				continue
-			}
-			p.logger.error("Timeout on shutting down the node with id ${node.id}. Putting its state back to on")
-		}
-		node.powerstate = .on
-	}
-}
-
-fn (mut p PowerManager) do_power_management() ! {
+pub fn (mut p PowerManager) update() {
 	mut used_resources := Capacity {}
 	mut total_resources := Capacity {}
 	mut nodes_to_shutdown := []&Node {}
-	mut nbr_nodes_on := 0
 	for node in p.db.nodes.values() {
 		if node.powerstate == .wakingup || node.powerstate == .shuttingdown {
 			// in case on of the nodes is waking up or shutting down do nothing until the timeouts occur or the the nodes are up or down.
 			return
 		}
 		if node.powerstate == .on {
-			nbr_nodes_on += 1
 			if node.is_unused() {
 				nodes_to_shutdown << node
 			}
@@ -86,23 +53,27 @@ fn (mut p PowerManager) do_power_management() ! {
 			total_resources.add(node.resources.total)
 		}
 	}
-	resources_usage := (used_resources.cru + used_resources.hru + used_resources.mru + used_resources.sru) / (total_resources.cru + total_resources.hru + total_resources.mru + total_resources.sru)
+	sum_used_resources := (used_resources.cru + used_resources.hru + used_resources.mru + used_resources.sru)
+	sum_total_resources := (total_resources.cru + total_resources.hru + total_resources.mru + total_resources.sru)
+	if sum_total_resources == 0 {
+		return
+	}
+
+	resources_usage := 100 * sum_used_resources / sum_total_resources
 	if resources_usage >= p.db.wake_up_threshold {
 		sleeping_nodes := p.db.nodes.values().filter(it.powerstate == .off)
 		if sleeping_nodes.len > 0 {
-			p.logger.info("Too much resource usage: ${resources_usage}. Turning on node ${sleeping_nodes[0].id}")
-			p.schedule_power_job(sleeping_nodes[0].id, .on)!
-		}
-	} else if nbr_nodes_on >= 2 {
-		// maybe we can shut down a node
-		for node in nodes_to_shutdown {
-			new_used := used_resources - node.resources.used
-			new_total := total_resources - node.resources.total
-			if (new_used.cru + new_used.hru + new_used.mru + new_used.sru) /
-				(new_total.cru + new_total.hru + new_total.mru + new_total.sru) < p.db.wake_up_threshold {
-				p.schedule_power_job(node.id, .off)!
-				break				
+			p.logger.info("${power_manager_prefix} Too much resource usage: ${resources_usage}. Turning on node ${sleeping_nodes[0].id}")
+			p.schedule_power_job(sleeping_nodes[0].id, .on) or {
+				p.logger.error("${power_manager_prefix} Job to power on node ${sleeping_nodes[0].id} failed.")
 			}
+		}
+	} else if nodes_to_shutdown.len > 1 {
+		// shutdown a node if there is more then 1 unused node (aka keep at least one node online)
+		node := nodes_to_shutdown[nodes_to_shutdown.len-1]
+		p.logger.info("${power_manager_prefix} Resource usage too low: ${resources_usage}. Turning of unused node ${node.id}")
+		p.schedule_power_job(node.id, .off) or {
+			p.logger.error("${power_manager_prefix} Job to power off node ${node.id} failed.")
 		}
 	}
 }
@@ -169,7 +140,7 @@ fn (p &PowerManager) ensure_node_is_on_or_off(nodeid u32) ! {
 fn (mut p PowerManager) schedule_power_job(nodeid u32, powerstate system.PowerState) ! {
 	mut args := Params {}
 	args.kwarg_add("nodeid", "${nodeid}")
-	_ := p.client.job_new_schedule(
+	_ := p.client.job_new_wait(
 		twinid: p.client.twinid,
 		action: if powerstate == .on { system.job_power_on } else { system.job_power_off },
 		args: args,

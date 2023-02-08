@@ -18,16 +18,16 @@ pub struct Farmerbot {
 pub mut:
 	path string
 	db &system.DB
-	logger &log.Logger = system.logger()
+	logger &log.Logger
 	managers map[string]&manager.Manager
 	processor processor.Processor
 	actionrunner actionrunner.ActionRunner
 }
 
-fn (mut f Farmerbot) update() ! {
+fn (mut f Farmerbot) update() {
 	for {
 		for _, mut manager in f.managers {
-			manager.update()!
+			manager.update()
 		}
 		time.sleep(time.minute * 5)
 	}
@@ -57,6 +57,11 @@ pub fn (mut f Farmerbot) init_db() ! {
 fn (mut f Farmerbot) init_managers() ! {
 	f.logger.info("Initializing managers")
 	f.managers = map[string]&manager.Manager{}
+	mut data_manager := &manager.DataManager {
+		client: client.new()!
+		db: f.db
+		logger: f.logger
+	}
 	mut farm_manager := &manager.FarmManager {
 		client: client.new()!
 		db: f.db 
@@ -74,6 +79,7 @@ fn (mut f Farmerbot) init_managers() ! {
 	}
 
 	// ADD NEW MANAGERS HERE
+	f.managers["datamanager"] = data_manager
 	f.managers["farmmanager"] = farm_manager
 	f.managers["nodemanager"] = node_manager
 	f.managers["powermanager"] = power_manager
@@ -92,22 +98,22 @@ pub fn (mut f Farmerbot) run() ! {
 	t := spawn (&f).update()
 	spawn (&f.actionrunner).run()
 	spawn (&f.processor).run()
-	t.wait()!
+	t.wait()
 	f.logger.info("Stopping the farmerbot")
 }
 
-pub fn new(path string, log_level log.Level) !&Farmerbot {
+pub fn new(path string) !&Farmerbot {
 	mut f := &Farmerbot {
 		path: path
 		db: &system.DB {
 			farm: &system.Farm {}
 		}
+		logger: system.logger()
 		processor: processor.Processor {}
 		actionrunner: actionrunner.ActionRunner {
 			client: &client.Client {}
 		}
 	}
-	f.logger.set_level(log_level)
 	f.init() or {
 		f.logger.error("$err")
 		return err
