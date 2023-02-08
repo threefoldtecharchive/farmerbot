@@ -1,12 +1,10 @@
 module manager
 
-import freeflowuniverse.crystallib.twinclient as tw
 import freeflowuniverse.baobab.actions
 import freeflowuniverse.baobab.client
 import freeflowuniverse.baobab.jobs
 import threefoldtech.farmerbot.system
 
-import json
 import log
 
 const (
@@ -41,18 +39,15 @@ pub fn (mut n NodeManager) update() ! {
 	// Update the resources by asking ZOS
 	for _, mut node in n.db.nodes {
 		stats := system.get_zos_statistics([node.twinid], timeout_zos_rmb_requests) or {
-			// TODO modify powerstate as we get no response
 			n.logger.error("${node_manager_prefix} Failed getting resources from ZOS node: ${err}")
 			continue
 		}
 		node.update_resources(stats)
 		node.public_config = system.zos_has_public_config([node.twinid], timeout_zos_rmb_requests) or {
-			// TODO modify powerstate as we get no response
 			n.logger.error("${node_manager_prefix} Failed getting publicip from ZOS node: ${err}")
 			continue
 		}
 
-		node.powerstate = .on
 		n.logger.debug("${node_manager_prefix} capacity updated for node:\n$node")
 	}
 }

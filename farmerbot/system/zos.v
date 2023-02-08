@@ -39,6 +39,21 @@ pub mut:
 	client redisclient.Redis
 }
 
+pub struct ZosResources {
+pub mut:
+	cru u64
+	sru u64
+	hru u64
+	mru u64
+	ipv4u u64
+}
+
+pub struct ZosResourcesStatistics {
+pub mut:
+	total ZosResources
+	used ZosResources
+}
+
 pub fn zos_has_public_config(dst []u32, exp u64) !bool {
 	mut rmb := RmbClient{}
 	rmb.client = redisclient.get('localhost:6379')!
@@ -83,18 +98,24 @@ pub fn get_zos_statistics(dst []u32, exp u64) !ZosResourcesStatistics {
 	return json.decode(ZosResourcesStatistics, base64.decode_str(response.dat))!
 }
 
-
-pub struct ZosResources {
-pub mut:
-	cru u64
-	sru u64
-	hru u64
-	mru u64
-	ipv4u u64
-}
-
-pub struct ZosResourcesStatistics {
-pub mut:
-	total ZosResources
-	used ZosResources
+pub fn get_zos_system_version(dst []u32, exp u64) !string {
+	mut rmb := RmbClient{}
+	rmb.client = redisclient.get('localhost:6379')!
+	rmb.msg = RmbMessage {
+		ver: 1
+		cmd: "zos.system.version"
+		exp: exp
+		dat: base64.encode_str("")
+		dst: dst
+		ret: rand.uuid_v4()
+		now: time.now().unix_time()
+	}
+	request := json.encode_pretty(rmb.msg)
+	rmb.client.lpush('msgbus.system.local', request)!
+	response_json := rmb.client.blpop(rmb.msg.ret, int(exp))!
+	response := json.decode(RmbResponse, response_json)!
+	if response.err.message != "" {
+		return error("${response.err.message}")
+	}
+	return base64.decode_str(response.dat)
 }

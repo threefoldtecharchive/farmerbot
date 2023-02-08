@@ -7,7 +7,6 @@ import freeflowuniverse.crystallib.params { Params }
 import threefoldtech.farmerbot.factory { Farmerbot }
 import threefoldtech.farmerbot.system { Capacity, Node}
 
-import log
 import os
 
 const (
@@ -17,42 +16,37 @@ const (
 pub type Test = fn (mut farmerbot Farmerbot, mut client Client) !
 
 pub struct TestEnvironment {
-pub mut:
-	tests map[string]Test
 }
 
-pub fn (mut t TestEnvironment) run(debug_log bool) {
-	mut logger := log.Logger(&log.Log{ level: .info })
-	mut client := client.new() or { return }
-
-	mut f := factory.new(testpath, if debug_log { .debug } else { .disabled }) or {
-		logger.error("Failed creating farmerbot: $err")
-		return
+pub fn (mut t TestEnvironment) run(test Test) ! {
+	mut client := client.new() or { 
+		return error("Failed creating client: $err")
 	}
-	_ := spawn f.run()
 
-	logger.info("=======")
-	logger.info("|TESTS|")
-	logger.info("=======")
-
-	for testname, test in t.tests {
-		f.init_db() or {
-			logger.error("Failed resetting database")
-			return
-		}
-		client.reset() or {
-			logger.error("Failed resetting client")
-		 	return
-		}
-		test(mut f, mut client) or {
-			logger.error("[FAILED] ${testname}: $err")
-			continue
-		}
-		logger.info("[PASSED] ${testname}")
+	// TODO: output log to file
+	mut f := factory.new(testpath, .disabled) or {
+		return error("Failed creating farmerbot: $err")
 	}
+	t_ar := spawn (&f.actionrunner).run()
+	t_pr := spawn (&f.processor).run()
+
+	client.reset() or {
+		return error("Failed resetting client: $err")
+	}
+
+	test(mut f, mut client) or {
+		f.processor.running = false
+		f.actionrunner.running = false
+		t_ar.wait()
+		t_pr.wait()
+		return error("$err")
+	}
+
+	f.processor.running = false
+	f.actionrunner.running = false
+	t_ar.wait()
+	t_pr.wait()
 }
-
-
 
 
 pub fn capacity_from_args(args &Params) !Capacity {

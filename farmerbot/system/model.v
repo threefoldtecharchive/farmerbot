@@ -1,9 +1,12 @@
 module system
 
-import freeflowuniverse.crystallib.params
-import freeflowuniverse.crystallib.twinclient as tw
-
 import math { ceil }
+
+pub const (
+	default_wake_up_threshold = 80
+	min_wake_up_threshold = 50
+	max_wake_up_threshold = 80
+)
 
 pub enum FarmerbotState as u8 {
 	stop
@@ -18,8 +21,10 @@ pub mut:
 }
 
 pub enum PowerState as u8 {
-	on 
+	on
+	wakingup
 	off
+	shuttingdown
 }
 
 pub struct Node{
@@ -34,6 +39,7 @@ pub mut:
 	public_ips_used u64
 	resources ConsumableResources
 	powerstate PowerState
+	powerstate_timeout u16
 }
 
 pub fn (mut n Node) update_resources(zos_stats &ZosResourcesStatistics) {
@@ -106,7 +112,7 @@ fn (a Capacity) - (b Capacity) Capacity {
 [heap]
 pub struct DB{
 pub mut:
-	wake_up_threshold u8
+	wake_up_threshold u8 = default_wake_up_threshold
 	nodes map[u32]&Node
 	farm &Farm
 }

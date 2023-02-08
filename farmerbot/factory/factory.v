@@ -3,7 +3,6 @@ module factory
 import freeflowuniverse.baobab
 import freeflowuniverse.baobab.actionrunner
 import freeflowuniverse.baobab.actions
-import freeflowuniverse.baobab.actor
 import freeflowuniverse.baobab.client
 import freeflowuniverse.baobab.processor
 import freeflowuniverse.crystallib.pathlib
@@ -21,16 +20,16 @@ pub mut:
 	db &system.DB
 	logger &log.Logger = system.logger()
 	managers map[string]&manager.Manager
-	processor processor.Processor = processor.Processor {}
-	actionrunner actionrunner.ActionRunner = actionrunner.ActionRunner {}
+	processor processor.Processor
+	actionrunner actionrunner.ActionRunner
 }
 
 fn (mut f Farmerbot) update() ! {
 	for {
 		for _, mut manager in f.managers {
 			manager.update()!
-			time.sleep(time.minute * 5)
 		}
+		time.sleep(time.minute * 5)
 	}
 }
 
@@ -90,7 +89,6 @@ pub fn (mut f Farmerbot) init() ! {
 }
 
 pub fn (mut f Farmerbot) run() ! {
-	// concurrently run actionrunner, processor, and external client
 	t := spawn (&f).update()
 	spawn (&f.actionrunner).run()
 	spawn (&f.processor).run()
@@ -101,7 +99,13 @@ pub fn (mut f Farmerbot) run() ! {
 pub fn new(path string, log_level log.Level) !&Farmerbot {
 	mut f := &Farmerbot {
 		path: path
-		db: &system.DB{}
+		db: &system.DB {
+			farm: &system.Farm {}
+		}
+		processor: processor.Processor {}
+		actionrunner: actionrunner.ActionRunner {
+			client: &client.Client {}
+		}
 	}
 	f.logger.set_level(log_level)
 	f.init() or {

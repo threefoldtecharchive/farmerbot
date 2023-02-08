@@ -3,9 +3,10 @@ We highly recommend to write proper tests that cover most of the code in this re
 
 ## Running the existing tests
 The tests have to be run before landing any PR. You can run the existing tests by running the command below:
-> v run tests.v
+> v -stats test tests/nodemanager_test.v
+> v -stats test tests/powermanager_test.v
 
-This will run all tests that have been added to tests.v. It will suppress the logs of the farmerbot though. If you wish it not to do that add the argument --debug.
+V supports running multiple test files at once but unfortunately we cannot use it as the redis usage is meant to be single threaded.
 
 ## Good practices for writing tests
 It is a good practice to structure a test in 3 parts: prepare, act and assert.
@@ -19,26 +20,29 @@ Finally, the assert part contains the code to make sure that the SUT is in a sta
 Structuring tests with these 3 parts will result in tests that easy to read, that will only test one specific thing and that are easy to maintain.
 
 ```
-fn test_find_node_that_is_on_first(mut farmerbot &Farmerbot, mut client &client.Client) ! {
-	// prepare
-	farmerbot.db.nodes[3].powerstate = .off
-	mut args := Params {}
-	// can fit on node with id 3 but it is offline so use 5
-	add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
+fn test_find_node_that_is_on_first() {
+	mut testenvironment := TestEnvironment{}
+	testenvironment.run(fn (mut farmerbot Farmerbot, mut client Client) ! {
+		// prepare
+		farmerbot.db.nodes[3].powerstate = .off
+		mut args := Params {}
+		// can fit on node with id 3 but it is offline so use 5
+		add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 
-	// act
-	mut job := client.job_new_wait(
-		twinid: 162
-		action: system.job_node_find
-		args: args
-		actionsource: ""
-	) or {
-		return error("failed to create and wait for job")
-	}
+		// act
+		mut job := client.job_new_wait(
+			twinid: 162
+			action: system.job_node_find
+			args: args
+			actionsource: ""
+		) or {
+			return error("failed to create and wait for job")
+		}
 
-	//assert
-	ensure_no_error(&job)!
-	ensure_result_contains_u32(&job, "nodeid", 5)!
+		//assert
+		ensure_no_error(&job)!
+		ensure_result_contains_u32(&job, "nodeid", 5)!
+	})!
 }
 ```
 
@@ -47,14 +51,5 @@ You can add new tests by following these steps:
 1) make sure to go through existing tests before adding a new one, we don't want two tests that are testing the same thing
 2) create a function with the same function definition as prior example
 3) implement the test following the rules mentioned above (but with your custom logic)
-4) hook the test up in the executable: add the function to the map of tests in tests.v:
-```
-    ...
-	// ADD YOUR TESTS HERE
-	mut testenvironment := TestEnvironment {
-		tests: tests
-	}
-	testenvironment.run(if debug_log { .debug } else { .disabled })
-}
 ```
 
