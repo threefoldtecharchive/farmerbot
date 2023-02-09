@@ -4,7 +4,7 @@ import freeflowuniverse.baobab.actions
 import freeflowuniverse.baobab.client
 import freeflowuniverse.baobab.jobs
 import freeflowuniverse.crystallib.params { Params }
-import threefoldtech.farmerbot.system { Capacity, ITfChain, Node }
+import threefoldtech.farmerbot.system { Capacity, ITfChain, IZos, Node }
 
 import log
 
@@ -20,6 +20,7 @@ mut:
 	db &system.DB
 	logger &log.Logger
 	tfchain &ITfChain
+	zos &IZos
 }
 
 pub fn (mut p PowerManager) init(mut action actions.Action) ! {

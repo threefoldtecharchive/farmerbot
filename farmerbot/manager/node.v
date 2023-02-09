@@ -9,8 +9,6 @@ import log
 
 const (
 	node_manager_prefix = "[NODEMANAGER]"
-	timeout_zos_rmb_requests = 5
-	retries_zos_rmb_requests = 5
 )
 
 [heap]
@@ -22,6 +20,7 @@ pub mut:
 	db &system.DB
 	logger &log.Logger
 	tfchain &system.ITfChain
+	zos &system.IZos
 }
 
 pub fn (mut n NodeManager) init(mut action actions.Action) ! {

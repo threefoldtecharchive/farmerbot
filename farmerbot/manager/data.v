@@ -3,7 +3,7 @@ module manager
 import freeflowuniverse.baobab.actions
 import freeflowuniverse.baobab.client
 import freeflowuniverse.baobab.jobs
-import threefoldtech.farmerbot.system { ITfChain, Node }
+import threefoldtech.farmerbot.system { ITfChain, IZos, Node }
 
 import log
 
@@ -20,6 +20,7 @@ mut:
 	db &system.DB
 	logger &log.Logger
 	tfchain &ITfChain
+	zos &IZos
 }
 
 pub fn (mut d DataManager) init(mut action actions.Action) ! {
@@ -40,7 +41,7 @@ pub fn (mut d DataManager) update() {
 
 fn (mut d DataManager) ping_node(nodeid u32) bool {
 	mut node := d.db.nodes[nodeid]
-	_ := system.get_zos_system_version(node.twinid, 5) or {
+	_ := d.zos.get_zos_system_version(node.twinid) or {
 		if node.powerstate == .wakingup {
 			if node.powerstate_timeout > 1 {
 				node.powerstate_timeout -= 1
@@ -66,12 +67,12 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 
 fn (mut d DataManager) update_node_data(nodeid u32) {
 	mut node := d.db.nodes[nodeid]
-	stats := system.get_zos_statistics(node.twinid, timeout_zos_rmb_requests) or {
+	stats := d.zos.get_zos_statistics(node.twinid) or {
 		d.logger.error("${data_manager_prefix} Failed to update statistics of node ${node.id}: $err")
 		return
 	}
 	node.update_resources(stats)
-	node.public_config = system.zos_has_public_config(node.twinid, timeout_zos_rmb_requests) or {
+	node.public_config = d.zos.zos_has_public_config(node.twinid) or {
 		d.logger.error("${data_manager_prefix} Failed to update public config of node ${node.id}: $err")
 		return
 	}

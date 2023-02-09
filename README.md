@@ -15,9 +15,10 @@ Actors can schedule the execution of jobs for other actors which might or might 
 Jobs don't have to originate from the system running the farmerbot. It may as well be scheduled from another system (with another twin id). The job to find a suitable node for example will come from the TSClient (which is located on another system). These jobs will be send from the TSClient to the farmerbot via [RMB](https://github.com/threefoldtech/rmb-rs).
 
 ## Dependencies
-The farmerbot has the following dependencies 
+The farmerbot has the following dependencies
 - redis
 - [rmb-peer](https://github.com/threefoldtech/rmb-rs/releases)
+- [grid3_client_ts http server](https://github.com/threefoldtech/grid3_client_ts/blob/development/docs/http_server.md)
 
 If you are building from scratch you will need these V modules installed:
 - [crystallib](https://github.com/freeflowuniverse/crystallib)

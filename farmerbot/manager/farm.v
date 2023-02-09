@@ -20,6 +20,7 @@ mut:
 	db &system.DB
 	logger &log.Logger
 	tfchain &system.ITfChain
+	zos &system.IZos
 }
 
 pub fn (mut f FarmManager) init(mut action actions.Action) ! {

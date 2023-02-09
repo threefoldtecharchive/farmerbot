@@ -20,6 +20,7 @@ pub mut:
 	db &system.DB
 	logger &log.Logger
 	tfchain &system.ITfChain
+	zos &system.IZos
 	managers map[string]&manager.Manager
 	processor processor.Processor
 	actionrunner actionrunner.ActionRunner
@@ -63,24 +64,28 @@ fn (mut f Farmerbot) init_managers() ! {
 		db: f.db
 		logger: f.logger
 		tfchain: f.tfchain
+		zos: f.zos
 	}
 	mut farm_manager := &manager.FarmManager {
 		client: client.new()!
 		db: f.db 
 		logger: f.logger
 		tfchain: f.tfchain
+		zos: f.zos
 	}
 	mut node_manager := &manager.NodeManager {
 		client: client.new()!
 		db: f.db 
 		logger: f.logger
 		tfchain: f.tfchain
+		zos: f.zos
 	}
 	mut power_manager := &manager.PowerManager {
 		client: client.new()!
 		db: f.db
 		logger: f.logger
 		tfchain: f.tfchain
+		zos: f.zos
 	}
 
 	// ADD NEW MANAGERS HERE
@@ -107,13 +112,18 @@ pub fn (mut f Farmerbot) run() ! {
 	f.logger.info("Stopping the farmerbot")
 }
 
-pub fn new(path string) !&Farmerbot {
+pub fn new(path string, grid3_http_address string, redis_address string) !&Farmerbot {
 	mut f := &Farmerbot {
 		path: path
 		db: &system.DB {
 			farm: &system.Farm {}
 		}
-		tfchain: &system.TfChain {}
+		tfchain: &system.TfChain {
+			address: grid3_http_address
+		}
+		zos: &system.ZosRMB {
+			redis_address: redis_address
+		}
 		logger: system.logger()
 		processor: processor.Processor {}
 		actionrunner: actionrunner.ActionRunner {

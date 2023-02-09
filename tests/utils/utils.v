@@ -8,7 +8,7 @@ import freeflowuniverse.crystallib.params { Params }
 
 import threefoldtech.farmerbot.factory { Farmerbot }
 import threefoldtech.farmerbot.manager { PowerManager }
-import threefoldtech.farmerbot.system { Capacity, Node, PowerState }
+import threefoldtech.farmerbot.system { Capacity, Node, PowerState, ZosResourcesStatistics }
 
 import math
 import os
@@ -17,11 +17,24 @@ const (
 	testpath = os.dir(@FILE) + '/../../example_data'
 )
 
+// TODO add some mock code
 pub struct TfChainMock {
-
 }
 pub fn (mut t TfChainMock) set_node_power(node_id u32, state PowerState) ! {
 
+}
+
+// TODO add some mock code 
+pub struct ZosMock {
+}
+pub fn (mut z ZosMock) zos_has_public_config(dst u32) !bool {
+	return true
+}
+pub fn (mut z ZosMock) get_zos_statistics(dst u32) !ZosResourcesStatistics {
+	return ZosResourcesStatistics {}
+}
+pub fn (mut z ZosMock) get_zos_system_version(dst u32) !string {
+	return ""
 }
 
 pub type Test = fn (mut farmerbot Farmerbot, mut client Client) !
@@ -30,6 +43,7 @@ pub type Test = fn (mut farmerbot Farmerbot, mut client Client) !
 pub struct TestEnvironment {
 pub mut:
 	tfchain_mock &TfChainMock = &TfChainMock {}
+	zos_mock &ZosMock = &ZosMock {}
 }
 
 pub fn (mut t TestEnvironment) run(name string, test Test) ! {
@@ -43,6 +57,7 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 	os.setenv("FARMERBOT_LOG_LEVEL", "DEBUG", true)
 	
 	t.tfchain_mock = &TfChainMock {}
+	t.zos_mock = &ZosMock {}
 	mut f := &Farmerbot {
 		path: testpath
 		db: &system.DB {
@@ -50,6 +65,7 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 		}
 		logger: system.logger()
 		tfchain: t.tfchain_mock
+		zos: t.zos_mock
 		processor: processor.Processor {}
 		actionrunner: actionrunner.ActionRunner {
 			client: &Client {}
