@@ -3,7 +3,7 @@ module manager
 import freeflowuniverse.baobab.actions
 import freeflowuniverse.baobab.client
 import freeflowuniverse.baobab.jobs
-import threefoldtech.farmerbot.system { Node }
+import threefoldtech.farmerbot.system { ITfChain, Node }
 
 import log
 
@@ -19,6 +19,7 @@ mut:
 	client client.Client
 	db &system.DB
 	logger &log.Logger
+	tfchain &ITfChain
 }
 
 pub fn (mut d DataManager) init(mut action actions.Action) ! {

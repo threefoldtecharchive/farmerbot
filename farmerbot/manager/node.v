@@ -3,7 +3,7 @@ module manager
 import freeflowuniverse.baobab.actions
 import freeflowuniverse.baobab.client
 import freeflowuniverse.baobab.jobs
-import threefoldtech.farmerbot.system
+import threefoldtech.farmerbot.system { Node }
 
 import log
 
@@ -17,10 +17,11 @@ const (
 pub struct NodeManager {
 	name string = "farmerbot.nodemanager"
 	
-mut:
+pub mut:
 	client client.Client
 	db &system.DB
 	logger &log.Logger
+	tfchain &system.ITfChain
 }
 
 pub fn (mut n NodeManager) init(mut action actions.Action) ! {
@@ -74,7 +75,6 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	n.logger.info("${node_manager_prefix} Executing job: FIND_NODE")
 	n.logger.debug("${node_manager_prefix} $job")
 
-	// Parse args
 	certified := job.args.get_default_false("certified")
 	public_config := job.args.get_default_false("public_config")
 	public_ips := job.args.get_u32_default("public_ips", 0)!
@@ -87,8 +87,6 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 		cru: job.args.get_u64_default("required_cru", 0)!
 	}
 	
-	// Lets find a node
-	mut possible_nodes := n.db.nodes.values()
 	if public_ips > 0 {
 		mut public_ips_used_by_nodes := u64(0)
 		for node in n.db.nodes.values() {
@@ -98,29 +96,32 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 			return error("No more public ips available")
 		}
 	}
-	if certified {
-		// Keep certified nodes
-		possible_nodes = possible_nodes.filter(it.certified)
+
+	mut possible_nodes := []&Node
+	for node in n.db.nodes.values() {
+		if certified && !node.certified {
+			continue
+		}
+		if public_config && !node.public_config {
+			continue
+		}
+		if dedicated {
+			if !node.dedicated || !node.is_unused() {
+				continue
+			}
+		} else {
+			if node.dedicated && required_capacity != node.resources.total {
+				continue
+			}
+		}
+		if node.id in node_exclude {
+			continue
+		}
+		if !node.can_claim_resources(required_capacity) {
+			continue
+		}
+		possible_nodes << node
 	}
-	if public_config {
-		// Keep nodes with public ip
-		possible_nodes = possible_nodes.filter(it.public_config)
-	}
-	if dedicated {
-		// Keep dedicated nodes only AKA rent the full node
-		possible_nodes = possible_nodes.filter(it.dedicated && it.is_unused())
-	} else {
-		// Don't care if it is dedicated. Though if the node is dedicated we have to rent the full node!
-		possible_nodes = possible_nodes.filter(!it.dedicated || required_capacity == it.resources.total)
-	}
-	if node_exclude.len > 0 {
-		// Exclude the nodes that the user doesn't want
-		possible_nodes = possible_nodes.filter(!(it.id in node_exclude))
-	}
-	// Keep nodes with enough resources
-	possible_nodes = possible_nodes.filter(
-		it.can_claim_resources(required_capacity)
-	)
 
 	// Sort the nodes on power state (the ones that are ON first)
 	possible_nodes.sort_with_compare(fn (a &&system.Node, b &&system.Node) int {
@@ -138,6 +139,7 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	}
 
 	n.logger.debug("Found a node: ${possible_nodes[0]}")
+	
 	// claim the resources until next update of the data
 	if dedicated {
 		// claim all capacity
@@ -145,13 +147,13 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	} else {
 		possible_nodes[0].claim_resources(required_capacity)
 	}
+
 	// claim public ips until next update of the data
 	if public_ips > 0 {
 		possible_nodes[0].public_ips_used += public_ips
 	}
-	// Result
-	job.result.kwarg_add("nodeid", "${possible_nodes[0].id}")
 
+	job.result.kwarg_add("nodeid", "${possible_nodes[0].id}")
 	if possible_nodes[0].powerstate == system.PowerState.off {
 		_ := n.client.job_new_schedule(
 			twinid: job.twinid,

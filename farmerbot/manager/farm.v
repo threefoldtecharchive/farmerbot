@@ -19,6 +19,7 @@ mut:
 	client client.Client
 	db &system.DB
 	logger &log.Logger
+	tfchain &system.ITfChain
 }
 
 pub fn (mut f FarmManager) init(mut action actions.Action) ! {

@@ -1,11 +1,14 @@
 module utils
 
+import freeflowuniverse.baobab.actionrunner
 import freeflowuniverse.baobab.client { Client }
 import freeflowuniverse.baobab.jobs { ActionJob, ActionJobState }
+import freeflowuniverse.baobab.processor
 import freeflowuniverse.crystallib.params { Params }
 
 import threefoldtech.farmerbot.factory { Farmerbot }
-import threefoldtech.farmerbot.system { Capacity, Node}
+import threefoldtech.farmerbot.manager { PowerManager }
+import threefoldtech.farmerbot.system { Capacity, Node, PowerState }
 
 import math
 import os
@@ -14,9 +17,19 @@ const (
 	testpath = os.dir(@FILE) + '/../../example_data'
 )
 
+pub struct TfChainMock {
+
+}
+pub fn (mut t TfChainMock) set_node_power(node_id u32, state PowerState) ! {
+
+}
+
 pub type Test = fn (mut farmerbot Farmerbot, mut client Client) !
 
+[heap]
 pub struct TestEnvironment {
+pub mut:
+	tfchain_mock &TfChainMock = &TfChainMock {}
 }
 
 pub fn (mut t TestEnvironment) run(name string, test Test) ! {
@@ -28,11 +41,24 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 
 	os.setenv("FARMERBOT_LOG_OUTPUT", "/tmp/farmerbot/${name}.log", true)
 	os.setenv("FARMERBOT_LOG_LEVEL", "DEBUG", true)
-
-	// TODO: output log to file
-	mut f := factory.new(testpath) or {
+	
+	t.tfchain_mock = &TfChainMock {}
+	mut f := &Farmerbot {
+		path: testpath
+		db: &system.DB {
+			farm: &system.Farm {}
+		}
+		logger: system.logger()
+		tfchain: t.tfchain_mock
+		processor: processor.Processor {}
+		actionrunner: actionrunner.ActionRunner {
+			client: &Client {}
+		}
+	}
+	f.init() or {
 		return error("Failed creating farmerbot: $err")
 	}
+
 	t_ar := spawn (&f.actionrunner).run()
 	t_pr := spawn (&f.processor).run()
 
@@ -53,6 +79,12 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 	t_ar.wait()
 	t_pr.wait()
 }
+
+pub fn run_test(name string, test Test) ! {
+	mut testenvironment := TestEnvironment{}
+	testenvironment.run(name, test)!
+}
+
 
 pub fn wait_till_jobs_are_finished(actor string, mut client Client) ! {
  	for client.check_remaining_jobs(actor)! > 0 {

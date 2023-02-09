@@ -15,6 +15,7 @@ mut:
 	client client.Client
 	db &system.DB
 	logger &log.Logger
+	tfchain &system.ITfChain
 
 	// is executed at initialization time
 	init(mut action actions.Action) !

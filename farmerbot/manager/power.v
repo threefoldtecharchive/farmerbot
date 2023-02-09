@@ -4,7 +4,7 @@ import freeflowuniverse.baobab.actions
 import freeflowuniverse.baobab.client
 import freeflowuniverse.baobab.jobs
 import freeflowuniverse.crystallib.params { Params }
-import threefoldtech.farmerbot.system { Capacity, Node }
+import threefoldtech.farmerbot.system { Capacity, ITfChain, Node }
 
 import log
 
@@ -19,6 +19,7 @@ mut:
 	client client.Client
 	db &system.DB
 	logger &log.Logger
+	tfchain &ITfChain
 }
 
 pub fn (mut p PowerManager) init(mut action actions.Action) ! {
@@ -101,7 +102,7 @@ fn (mut p PowerManager) poweron(mut job jobs.ActionJob) ! {
 	}
 	p.ensure_node_is_on_or_off(nodeid)!
 
-	// TODO: call the chain
+	p.tfchain.set_node_power(nodeid, .on)!
 
 	p.db.nodes[nodeid].powerstate = .wakingup
 	p.db.nodes[nodeid].powerstate_timeout = 6
@@ -109,7 +110,7 @@ fn (mut p PowerManager) poweron(mut job jobs.ActionJob) ! {
 
 fn (mut p PowerManager) poweroff(mut job jobs.ActionJob) ! {
 	//make sure the node is powered off
-	p.logger.info("${power_manager_prefix} Executing job: POWEROFF")
+	p.logger.info("${power_manager_prefix} Executing job: POWEROFF: ${p.tfchain}")
 
 	nodeid := p.nodeid_from_args(&job)!
 
@@ -122,8 +123,10 @@ fn (mut p PowerManager) poweroff(mut job jobs.ActionJob) ! {
 	if p.db.nodes.values().filter(it.powerstate == .on).len < 2 {
 		return error("Cannot power off node, at least one node should be on in the farm.")
 	}
-	
-	// TODO: call the chain
+	p.logger.info("Ok")
+	p.tfchain.set_node_power(nodeid, .off)!
+	p.logger.info("OK;")
+
 	p.db.nodes[nodeid].powerstate = .shuttingdown
 	p.db.nodes[nodeid].powerstate_timeout = 6
 }

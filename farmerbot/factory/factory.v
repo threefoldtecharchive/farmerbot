@@ -19,6 +19,7 @@ pub mut:
 	path string
 	db &system.DB
 	logger &log.Logger
+	tfchain &system.ITfChain
 	managers map[string]&manager.Manager
 	processor processor.Processor
 	actionrunner actionrunner.ActionRunner
@@ -61,21 +62,25 @@ fn (mut f Farmerbot) init_managers() ! {
 		client: client.new()!
 		db: f.db
 		logger: f.logger
+		tfchain: f.tfchain
 	}
 	mut farm_manager := &manager.FarmManager {
 		client: client.new()!
 		db: f.db 
-		logger: f.logger 
+		logger: f.logger
+		tfchain: f.tfchain
 	}
 	mut node_manager := &manager.NodeManager {
 		client: client.new()!
 		db: f.db 
-		logger: f.logger 
+		logger: f.logger
+		tfchain: f.tfchain
 	}
 	mut power_manager := &manager.PowerManager {
 		client: client.new()!
 		db: f.db
-		logger: f.logger 
+		logger: f.logger
+		tfchain: f.tfchain
 	}
 
 	// ADD NEW MANAGERS HERE
@@ -108,6 +113,7 @@ pub fn new(path string) !&Farmerbot {
 		db: &system.DB {
 			farm: &system.Farm {}
 		}
+		tfchain: &system.TfChain {}
 		logger: system.logger()
 		processor: processor.Processor {}
 		actionrunner: actionrunner.ActionRunner {
