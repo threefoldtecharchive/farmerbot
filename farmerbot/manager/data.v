@@ -42,12 +42,12 @@ pub fn (mut d DataManager) update() {
 fn (mut d DataManager) ping_node(nodeid u32) bool {
 	mut node := d.db.nodes[nodeid]
 	_ := d.zos.get_zos_system_version(node.twinid) or {
+		d.logger.error("${data_manager_prefix} PING to node ${node.id} was unsuccessful: $err")
 		if node.powerstate == .wakingup {
 			if node.powerstate_timeout > 1 {
 				node.powerstate_timeout -= 1
 				return false
 			}
-			// TODO maybe no longer use the node until it comes back on
 			d.logger.error("${data_manager_prefix} Timeout on waking up the node with id ${node.id}. Putting its state back to off")
 		}
 		node.powerstate = .off
@@ -60,7 +60,7 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 		}
 		d.logger.error("${data_manager_prefix} Timeout on shutting down the node with id ${node.id}. Putting its state back to on")
 	}
-	d.logger.debug("${data_manager_prefix} PING to node ${node.id} was successful.")
+	d.logger.info("${data_manager_prefix} PING to node ${node.id} was successful.")
 	node.powerstate = .on
 	return true
 }

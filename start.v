@@ -20,6 +20,7 @@ fn main() {
 	redis := fp.string('redis', `r`, '${default_redis_address}', 'The address of the redis db.')
 	directory := fp.string('config_dir', `c`, '${default_data_dir}', 'The directory containing the markup definition files with the configuration of the nodes.')
 	output_file := fp.string('output', `o`, '', 'The file to save the logs of the farmerbot in.')
+	network := fp.string('network', `n`, 'DEV', 'The network to run on.')
 	debug_log := fp.bool('debug', 0, false, 'By setting this flag the farmerbot will print debug logs too.')
 
 	_ := fp.finalize() or {
@@ -36,7 +37,7 @@ fn main() {
 	}
 
 	// TODO add arguments
-	mut f := factory.new(directory, grid3_http_address, redis) or {
+	mut f := factory.new(directory, grid3_http_address, redis, network) or {
 		exit(1)
 	}
 	
