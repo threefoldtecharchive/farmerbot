@@ -7,9 +7,11 @@ import freeflowuniverse.crystallib.params { Params }
 import threefoldtech.farmerbot.system { Capacity, ITfChain, IZos, Node }
 
 import log
+import time
 
 const (
 	power_manager_prefix = "[POWERMANAGER]"
+	periodic_wakeup_interval = time.hour * 23
 )
 
 [heap]
@@ -39,45 +41,70 @@ pub fn (mut p PowerManager) execute(mut job jobs.ActionJob) ! {
 }
 
 pub fn (mut p PowerManager) update() {
-	mut used_resources := Capacity {}
-	mut total_resources := Capacity {}
-	mut nodes_to_shutdown := []&Node {}
-	for node in p.db.nodes.values() {
-		if node.powerstate == .wakingup || node.powerstate == .shuttingdown {
-			// in case on of the nodes is waking up or shutting down do nothing until the timeouts occur or the the nodes are up or down.
-			return
-		}
-		if node.powerstate == .on {
-			if node.is_unused() {
-				nodes_to_shutdown << node
+	p.periodic_wakeup()
+	p.power_management()
+}
+
+fn (mut p PowerManager) periodic_wakeup() {
+	for mut node in p.db.nodes.values().filter(it.powerstate == .off) {
+		if time.since(node.last_time_awake) >= periodic_wakeup_interval {
+			p.schedule_power_job(node.id, .on) or {
+				p.logger.error("${power_manager_prefix} Job to power on node ${node.id} failed.")
+				continue
 			}
-			used_resources.add(node.resources.used)
-			total_resources.add(node.resources.total)
 		}
 	}
-	sum_used_resources := (used_resources.cru + used_resources.hru + used_resources.mru + used_resources.sru)
-	sum_total_resources := (total_resources.cru + total_resources.hru + total_resources.mru + total_resources.sru)
-	if sum_total_resources == 0 {
+}
+
+fn (mut p PowerManager) power_management() {
+	if p.db.nodes.values().filter(it.powerstate == .wakingup || it.powerstate == .shuttingdown).len > 0 {
+		// in case one of the nodes is waking up or shutting down do nothing until the timeouts occur or the nodes are up or down.
+		return 
+	}
+	used_resources, total_resources := p.calculate_resource_usage()
+	if total_resources == 0 {
 		return
 	}
-
-	resources_usage := 100 * sum_used_resources / sum_total_resources
-	if resources_usage >= p.db.wake_up_threshold {
+	resource_usage := 100 * used_resources / total_resources
+	if resource_usage >= p.db.wake_up_threshold {
 		sleeping_nodes := p.db.nodes.values().filter(it.powerstate == .off)
 		if sleeping_nodes.len > 0 {
-			p.logger.info("${power_manager_prefix} Too much resource usage: ${resources_usage}. Turning on node ${sleeping_nodes[0].id}")
-			p.schedule_power_job(sleeping_nodes[0].id, .on) or {
-				p.logger.error("${power_manager_prefix} Job to power on node ${sleeping_nodes[0].id} failed.")
+			node := sleeping_nodes.first()
+			p.logger.info("${power_manager_prefix} Too much resource usage: ${resource_usage}. Turning on node ${node.id}")
+			p.schedule_power_job(node.id, .on) or {
+				p.logger.error("${power_manager_prefix} Job to power on node ${node.id} failed.")
 			}
 		}
-	} else if nodes_to_shutdown.len > 1 {
-		// shutdown a node if there is more then 1 unused node (aka keep at least one node online)
-		node := nodes_to_shutdown[nodes_to_shutdown.len-1]
-		p.logger.info("${power_manager_prefix} Resource usage too low: ${resources_usage}. Turning of unused node ${node.id}")
-		p.schedule_power_job(node.id, .off) or {
-			p.logger.error("${power_manager_prefix} Job to power off node ${node.id} failed.")
+	} else {
+		nodes_able_to_shutdown := p.db.nodes.values().filter(it.powerstate == .on && it.is_unused())
+		if nodes_able_to_shutdown.len > 1 {
+			// shutdown a node if there is more then 1 unused node (aka keep at least one node online)
+			node := nodes_able_to_shutdown.last()
+			new_used_resources := (used_resources - node.resources.used.hru - node.resources.used.sru - node.resources.used.mru - node.resources.used.cru)
+			new_total_resources := (total_resources - node.resources.total.hru - node.resources.total.sru - node.resources.total.mru - node.resources.total.cru)
+			if 100 * new_used_resources / new_total_resources < p.db.wake_up_threshold {
+				// we need to keep the resource percentage lower then the threshold
+				p.logger.info("${power_manager_prefix} Resource usage too low: ${resource_usage}. Turning of unused node ${node.id}")
+				p.schedule_power_job(node.id, .off) or {
+					p.logger.error("${power_manager_prefix} Job to power off node ${node.id} failed.")
+				}
+			}
 		}
 	}
+}
+
+fn (mut p PowerManager) calculate_resource_usage() (u64, u64) {
+	mut used_resources := Capacity {}
+	mut total_resources := Capacity {}
+
+	for node in p.db.nodes.values().filter(it.powerstate == .on) {
+		used_resources.add(node.resources.used)
+		total_resources.add(node.resources.total)
+	}
+	
+	return (used_resources.cru + used_resources.hru + used_resources.mru + used_resources.sru), 
+			(total_resources.cru + total_resources.hru + total_resources.mru + total_resources.sru)
+
 }
 
 fn (mut p PowerManager) nodeid_from_args(job &jobs.ActionJob) !u32 {
@@ -106,7 +133,7 @@ fn (mut p PowerManager) poweron(mut job jobs.ActionJob) ! {
 	p.tfchain.set_node_power(nodeid, .on)!
 
 	p.db.nodes[nodeid].powerstate = .wakingup
-	p.db.nodes[nodeid].powerstate_timeout = 6
+	p.db.nodes[nodeid].last_time_powerstate_changed = time.now()
 }
 
 fn (mut p PowerManager) poweroff(mut job jobs.ActionJob) ! {
@@ -124,12 +151,11 @@ fn (mut p PowerManager) poweroff(mut job jobs.ActionJob) ! {
 	if p.db.nodes.values().filter(it.powerstate == .on).len < 2 {
 		return error("Cannot power off node, at least one node should be on in the farm.")
 	}
-	p.logger.info("Ok")
+
 	p.tfchain.set_node_power(nodeid, .off)!
-	p.logger.info("OK;")
 
 	p.db.nodes[nodeid].powerstate = .shuttingdown
-	p.db.nodes[nodeid].powerstate_timeout = 6
+	p.db.nodes[nodeid].last_time_powerstate_changed = time.now()
 }
 
 fn (p &PowerManager) ensure_node_is_on_or_off(nodeid u32) ! {

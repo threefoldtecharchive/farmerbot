@@ -10,6 +10,7 @@ import threefoldtech.farmerbot.system
 import threefoldtech.farmerbot.manager
 
 import log
+import math
 import regex
 import time
 
@@ -28,10 +29,14 @@ pub mut:
 
 fn (mut f Farmerbot) update() {
 	for {
+		time_start := time.now()
 		for _, mut manager in f.managers {
 			manager.update()
 		}
-		time.sleep(time.minute * 5)
+		delta := time.now()-time_start
+		f.logger.debug("Elapsed time for update: ${delta.minutes()}")
+		time_to_sleep := if delta.minutes() >= 5 { 0 } else { 5 - delta.minutes() }
+		time.sleep(time.minute * time_to_sleep)
 	}
 }
 

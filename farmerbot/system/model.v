@@ -1,6 +1,7 @@
 module system
 
 import math { ceil }
+import time { Time }
 
 pub const (
 	default_wake_up_threshold = 80
@@ -39,7 +40,8 @@ pub mut:
 	public_ips_used u64
 	resources ConsumableResources
 	powerstate PowerState
-	powerstate_timeout u16
+	last_time_powerstate_changed Time
+	last_time_awake Time
 }
 
 pub fn (mut n Node) update_resources(zos_stats &ZosResourcesStatistics) {

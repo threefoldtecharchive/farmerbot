@@ -6,9 +6,11 @@ import freeflowuniverse.baobab.jobs
 import threefoldtech.farmerbot.system { ITfChain, IZos, Node }
 
 import log
+import time
 
 const (
 	data_manager_prefix = "[DATAMANAGER]"
+	timeout_powerstate_change = time.minute * 30
 )
 
 [heap]
@@ -42,26 +44,33 @@ pub fn (mut d DataManager) update() {
 fn (mut d DataManager) ping_node(nodeid u32) bool {
 	mut node := d.db.nodes[nodeid]
 	_ := d.zos.get_zos_system_version(node.twinid) or {
+		// No response from ZOS node: if the state is waking up we wait for either the node to come up or the
+		// timeout to hit. If the time out hits we change the state to off (AKA unsuccessful wakeup)
+		// If the state was not waking up the node is considered off
 		d.logger.error("${data_manager_prefix} PING to node ${node.id} was unsuccessful: $err")
 		if node.powerstate == .wakingup {
-			if node.powerstate_timeout > 1 {
-				node.powerstate_timeout -= 1
+			if time.since(node.last_time_powerstate_changed) < timeout_powerstate_change {
 				return false
 			}
 			d.logger.error("${data_manager_prefix} Timeout on waking up the node with id ${node.id}. Putting its state back to off")
 		}
 		node.powerstate = .off
+		node.last_time_powerstate_changed = time.now()
 		return false
 	}
+	// We got a response from ZOS: it is still online. If the powerstate is shutting down
+	// we check if the timeout has not exceeded yet. If it has we consider the attempt to shutting
+	// down the down a failure and set teh powerstate back to on
 	if node.powerstate == .shuttingdown {
-		if node.powerstate_timeout > 1 {
-			node.powerstate_timeout -= 1
+		if time.since(node.last_time_powerstate_changed) < timeout_powerstate_change {
 			return false
 		}
 		d.logger.error("${data_manager_prefix} Timeout on shutting down the node with id ${node.id}. Putting its state back to on")
 	}
 	d.logger.info("${data_manager_prefix} PING to node ${node.id} was successful.")
 	node.powerstate = .on
+	node.last_time_powerstate_changed = time.now()
+	node.last_time_awake = time.now()
 	return true
 }
 

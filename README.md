@@ -29,9 +29,13 @@ You will need to clone the V modules that the farmerbot depends on. Then you can
 > run install.sh
 
 ## Running the farmerbot
-Make sure you have all the dependencies installed before running the command below. You also have to configure some things in markup definition files:
+Make sure you have all the dependencies installed before running the commands below. You also have to configure some things in markup definition files:
 
 - the nodes have to be configured (see example_data/1_data/nodes.md)
+
+Now run the dependencies. Make sure to use the mnemonics of your farm as it is needed for some calls to the chain.
+> rmb-peer --mnemonics "$(cat mnemonics.txt)" --relay wss://relay.dev.grid.tf:443 --substrate wss://tfchain.dev.grid.tf:443
+> See [this page](https://github.com/threefoldtech/grid3_client_ts/blob/development/docs/http_server.md) on how to run the grid3 client ts
 
 Now you can run the following command:
 > v run start.v

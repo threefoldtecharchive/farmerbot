@@ -302,6 +302,7 @@ fn test_power_management_resource_usage_too_low() {
 			// prepare
 			farmerbot.db.wake_up_threshold = 80
 			for mut node in farmerbot.db.nodes.values() {
+				node.last_time_awake = time.now()
 				node.powerstate = .off
 			}
 			farmerbot.db.nodes[3].powerstate = .on
@@ -326,6 +327,7 @@ fn test_power_management_resource_usage_too_low_keep_at_least_one_empty_node_on(
 			// prepare
 			farmerbot.db.wake_up_threshold = 80
 			for mut node in farmerbot.db.nodes.values() {
+				node.last_time_awake = time.now()
 				node.powerstate = .off
 			}
 			farmerbot.db.nodes[3].powerstate = .on
@@ -337,6 +339,63 @@ fn test_power_management_resource_usage_too_low_keep_at_least_one_empty_node_on(
 
 			// assert
 			assert farmerbot.db.nodes[5].powerstate == .on
+		}
+	)!
+}
+
+// Test power management: the capacity usage is lower then the threshold but
+// we can't shutdown any nodes as they are all being used.
+fn test_power_management_resource_usage_too_low_no_nodes_to_bring_down() {
+	run_test("test_power_management_resource_usage_too_low_no_nodes_to_bring_down",
+		fn (mut farmerbot Farmerbot, mut client Client) ! {
+			// prepare
+			farmerbot.db.wake_up_threshold = 80
+			for mut node in farmerbot.db.nodes.values() {
+				node.last_time_awake = time.now()
+				node.powerstate = .off
+			}
+			farmerbot.db.nodes[3].powerstate = .on
+			put_usage_to_x_procent(mut farmerbot.db.nodes[3], 25)
+			farmerbot.db.nodes[5].powerstate = .on
+			put_usage_to_x_procent(mut farmerbot.db.nodes[5], 34)
+			farmerbot.db.nodes[8].powerstate = .on
+			put_usage_to_x_procent(mut farmerbot.db.nodes[8], 55)
+
+			// act
+			farmerbot.managers["powermanager"].update()
+
+			// assert
+			assert farmerbot.db.nodes.values().filter(it.powerstate == .on).len == 3
+			assert farmerbot.db.nodes.values().filter(it.powerstate == .shuttingdown).len == 0
+			assert farmerbot.db.nodes.values().filter(it.powerstate == .wakingup).len == 0
+		}
+	)!
+}
+
+// Test power management: periodic wakeup
+fn test_power_management_periodic_wakeup() {
+	run_test("test_power_management_periodic_wakeup",
+		fn (mut farmerbot Farmerbot, mut client Client) ! {
+			// prepare
+			farmerbot.db.wake_up_threshold = 80
+			twenty_three_hours_ago := time.now().add_days(-1)
+
+			for mut node in farmerbot.db.nodes.values() {
+				node.powerstate = .on
+			}
+			farmerbot.db.nodes[3].powerstate = .off
+			farmerbot.db.nodes[3].last_time_awake = twenty_three_hours_ago
+			farmerbot.db.nodes[5].powerstate = .off
+			farmerbot.db.nodes[5].last_time_awake = twenty_three_hours_ago
+
+			// act
+			farmerbot.managers["powermanager"].update()
+
+			// assert
+			assert farmerbot.db.nodes[3].powerstate == .wakingup
+			assert farmerbot.db.nodes[5].powerstate == .wakingup
+			assert farmerbot.db.nodes.values().filter(it.powerstate == .shuttingdown).len == 0
+			assert farmerbot.db.nodes.values().filter(it.powerstate == .off).len == 0
 		}
 	)!
 }
