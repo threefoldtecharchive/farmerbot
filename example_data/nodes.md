@@ -54,6 +54,8 @@ example node definition, description is optional
 
 !!farmerbot.powermanager.configure
     wake_up_threshold:80
+    periodic_wakeup:8:30AM
+
 
 !!farmerbot.farmmanager.define
     id:3

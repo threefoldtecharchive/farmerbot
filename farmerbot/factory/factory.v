@@ -54,8 +54,8 @@ pub fn (mut f Farmerbot) init_db() ! {
 				name := action.name.split(".")[1]
 				if name in f.managers {
 					f.managers[name].init(mut &action)!
-				}		
-			}					
+				}
+			}
 		}
 	}
 	f.logger.debug("${f.db.nodes}")

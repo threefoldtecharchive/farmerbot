@@ -377,23 +377,28 @@ fn test_power_management_periodic_wakeup() {
 	run_test("test_power_management_periodic_wakeup",
 		fn (mut farmerbot Farmerbot, mut client Client) ! {
 			// prepare
-			farmerbot.db.wake_up_threshold = 80
-			twenty_three_hours_ago := time.now().add_days(-1)
+			now := time.now()
+			farmerbot.db.periodic_wakeup_start = time.hour * now.hour
+			twenty_three_hours_ago := now.add_days(-1)
+			one_hour_ago := now.add(-time.hour)
 
 			for mut node in farmerbot.db.nodes.values() {
 				node.powerstate = .on
 			}
 			farmerbot.db.nodes[3].powerstate = .off
-			farmerbot.db.nodes[3].last_time_awake = twenty_three_hours_ago
+			farmerbot.db.nodes[3].last_time_awake = one_hour_ago
 			farmerbot.db.nodes[5].powerstate = .off
 			farmerbot.db.nodes[5].last_time_awake = twenty_three_hours_ago
 
 			// act
+			// we wake up only one node at a time
+			farmerbot.managers["powermanager"].update()
 			farmerbot.managers["powermanager"].update()
 
 			// assert
 			assert farmerbot.db.nodes[3].powerstate == .wakingup
 			assert farmerbot.db.nodes[5].powerstate == .wakingup
+			// make sure no other nodes were shutdown
 			assert farmerbot.db.nodes.values().filter(it.powerstate == .shuttingdown).len == 0
 			assert farmerbot.db.nodes.values().filter(it.powerstate == .off).len == 0
 		}

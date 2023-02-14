@@ -46,11 +46,18 @@ pub fn (mut p PowerManager) update() {
 }
 
 fn (mut p PowerManager) periodic_wakeup() {
-	for mut node in p.db.nodes.values().filter(it.powerstate == .off) {
-		if time.since(node.last_time_awake) >= periodic_wakeup_interval {
-			p.schedule_power_job(node.id, .on) or {
-				p.logger.error("${power_manager_prefix} Job to power on node ${node.id} failed.")
-				continue
+	now := time.now()
+	today := time.new_time(year: now.year, month: now.month, day: now.day)
+	periodic_wakeup_start := today.add(p.db.periodic_wakeup_start)
+	if periodic_wakeup_start <= now {
+		for mut node in p.db.nodes.values().filter(it.powerstate == .off) {
+			if node.last_time_awake < periodic_wakeup_start {
+				p.schedule_power_job(node.id, .on) or {
+					p.logger.error("${power_manager_prefix} Job to power on node ${node.id} failed.")
+					continue
+				}
+				// reboot one at a time others will be rebooted 5 min later
+				break
 			}
 		}
 	}
@@ -184,5 +191,8 @@ fn (mut p PowerManager) configure(mut action actions.Action) ! {
 		p.logger.warn("${power_manager_prefix} The setting wake_up_threshold should be in the range [${system.min_wake_up_threshold}, ${system.max_wake_up_threshold}]")
 	}
 
+	periodic_wakeup_start := action.params.get_time_default("periodic_wakeup", time.hour * time.now().hour)!
+	
 	p.db.wake_up_threshold = wake_up_threshold
+	p.db.periodic_wakeup_start = periodic_wakeup_start
 }

@@ -1,7 +1,7 @@
 module system
 
 import math { ceil }
-import time { Time }
+import time { Duration, Time }
 
 pub const (
 	default_wake_up_threshold = 80
@@ -115,6 +115,8 @@ fn (a Capacity) - (b Capacity) Capacity {
 pub struct DB{
 pub mut:
 	wake_up_threshold u8 = default_wake_up_threshold
+	periodic_wakeup_start Duration 
+	periodic_wakeup_end Duration
 	nodes map[u32]&Node
 	farm &Farm
 }

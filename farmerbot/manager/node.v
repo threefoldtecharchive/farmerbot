@@ -52,7 +52,7 @@ fn (mut n NodeManager) data_set(mut action actions.Action) ! {
 		id: action.params.get_u32("id")!
 		twinid: twinid
 		description: action.params.get_default("description", "")!
-		resources: system.ConsumableResources{
+		resources: system.ConsumableResources {
 			overprovision_cpu: cpu_overprovision
 			total: system.Capacity {
 				cru: action.params.get_u64_default("cru", 0)!
