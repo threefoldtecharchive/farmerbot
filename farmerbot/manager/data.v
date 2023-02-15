@@ -46,12 +46,16 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 		// No response from ZOS node: if the state is waking up we wait for either the node to come up or the
 		// timeout to hit. If the time out hits we change the state to off (AKA unsuccessful wakeup)
 		// If the state was not waking up the node is considered off
-		d.logger.error("${data_manager_prefix} PING to node ${node.id} was unsuccessful: $err")
 		if node.powerstate == .wakingup {
 			if time.since(node.last_time_powerstate_changed) < timeout_powerstate_change {
+				d.logger.debug("${data_manager_prefix} Node ${node.id} is waking up.")
 				return false
 			}
-			d.logger.error("${data_manager_prefix} Timeout on waking up the node with id ${node.id}. Putting its state back to off")
+			d.logger.error("${data_manager_prefix} Node ${node.id} wakeup was unsuccessful. Putting its state back to off.")
+		} else if node.powerstate == .shuttingdown {
+			d.logger.debug("${data_manager_prefix} Node ${node.id} shutdown was successful.")
+		} else {
+			d.logger.error("${data_manager_prefix} Node ${node.id} is not responding while we expect it to!")
 		}
 		node.powerstate = .off
 		node.last_time_powerstate_changed = time.now()
@@ -62,11 +66,13 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 	// down the down a failure and set teh powerstate back to on
 	if node.powerstate == .shuttingdown {
 		if time.since(node.last_time_powerstate_changed) < timeout_powerstate_change {
+			d.logger.debug("${data_manager_prefix} Node ${node.id} is shutting down.")
 			return false
 		}
-		d.logger.error("${data_manager_prefix} Timeout on shutting down the node with id ${node.id}. Putting its state back to on")
+		d.logger.error("${data_manager_prefix} Node ${node.id} shutdown was unsuccessful. Putting its state back to on.")
+	} else {
+		d.logger.debug("${data_manager_prefix} Node ${node.id} is online.")
 	}
-	d.logger.info("${data_manager_prefix} PING to node ${node.id} was successful.")
 	node.powerstate = .on
 	node.last_time_powerstate_changed = time.now()
 	node.last_time_awake = time.now()
@@ -75,7 +81,7 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 
 fn (mut d DataManager) update_node_data(nodeid u32) {
 	mut node := d.db.nodes[nodeid]
-	if (node.timeout_claimed_resources == 0) {
+	if node.timeout_claimed_resources == 0 {
 		stats := d.zos.get_zos_statistics(node.twinid) or {
 			d.logger.error("${data_manager_prefix} Failed to update statistics of node ${node.id}: $err")
 			return
@@ -92,5 +98,5 @@ fn (mut d DataManager) update_node_data(nodeid u32) {
 		d.logger.error("${data_manager_prefix} Failed to update the wireguard ports used by node ${node.id}: $err")
 		return
 	}
-	d.logger.debug("${data_manager_prefix} capacity updated for node:\n$node")
+	d.logger.debug("${data_manager_prefix} capacity updated for node ${node.id}:\n${node.resources}")
 }

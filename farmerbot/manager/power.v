@@ -53,7 +53,7 @@ fn (mut p PowerManager) periodic_wakeup() {
 		for mut node in p.db.nodes.values().filter(it.powerstate == .off) {
 			if node.last_time_awake < periodic_wakeup_start {
 				p.schedule_power_job(node.id, .on) or {
-					p.logger.error("${power_manager_prefix} Job to power on node ${node.id} failed.")
+					p.logger.error("${power_manager_prefix} Job to power on node ${node.id} failed: $err")
 					continue
 				}
 				// reboot one at a time others will be rebooted 5 min later
@@ -79,7 +79,7 @@ fn (mut p PowerManager) power_management() {
 			node := sleeping_nodes.first()
 			p.logger.info("${power_manager_prefix} Too much resource usage: ${resource_usage}. Turning on node ${node.id}")
 			p.schedule_power_job(node.id, .on) or {
-				p.logger.error("${power_manager_prefix} Job to power on node ${node.id} failed.")
+				p.logger.error("${power_manager_prefix} Job to power on node ${node.id} failed: $err")
 			}
 		}
 	} else {
@@ -95,7 +95,7 @@ fn (mut p PowerManager) power_management() {
 					// we need to keep the resource percentage lower then the threshold
 					p.logger.info("${power_manager_prefix} Resource usage too low: ${resource_usage}. Turning of unused node ${node.id}")
 					p.schedule_power_job(node.id, .off) or {
-						p.logger.error("${power_manager_prefix} Job to power off node ${node.id} failed.")
+						p.logger.error("${power_manager_prefix} Job to power off node ${node.id} failed: $err")
 						// let's try the next one
 						continue
 					}
@@ -184,11 +184,14 @@ fn (p &PowerManager) ensure_node_is_on_or_off(nodeid u32) ! {
 fn (mut p PowerManager) schedule_power_job(nodeid u32, powerstate system.PowerState) ! {
 	mut args := Params {}
 	args.kwarg_add("nodeid", "${nodeid}")
-	_ := p.client.job_new_wait(
+	job := p.client.job_new_wait(
 		twinid: p.client.twinid,
 		action: if powerstate == .on { system.job_power_on } else { system.job_power_off },
 		args: args,
 		actionsource: "")!
+	if job.state == .error {
+		return error("$job.error")
+	}
 }
 
 fn (mut p PowerManager) configure(mut action actions.Action) ! {

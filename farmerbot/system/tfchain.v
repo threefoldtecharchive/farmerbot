@@ -34,8 +34,10 @@ pub fn (mut t TfChain) set_node_power(node_id u32, state PowerState) ! {
 			else { return error("The node power can only be set to on or off!") }
 		}
 	}
-	response := http_client.send("farmerbot.setNodePower", json.encode(args))!
+	response := http_client.send("nodes.setNodePower", json.encode(args)) or {
+		return error("Failed to send ")
+	}
 	if response.err != "" {
 		return error("${response.err}")
-	}	
+	}
 }
