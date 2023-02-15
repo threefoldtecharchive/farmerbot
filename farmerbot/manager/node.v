@@ -140,6 +140,8 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	n.logger.debug("Found a node: ${possible_nodes[0]}")
 	
 	// claim the resources until next update of the data
+	// add a timeout (after 6 rounds of update we update the resources, 30 minutes)
+	possible_nodes[0].timeout_claimed_resources = 6
 	if dedicated {
 		// claim all capacity
 		possible_nodes[0].claim_resources(possible_nodes[0].resources.total)

@@ -75,11 +75,15 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 
 fn (mut d DataManager) update_node_data(nodeid u32) {
 	mut node := d.db.nodes[nodeid]
-	stats := d.zos.get_zos_statistics(node.twinid) or {
-		d.logger.error("${data_manager_prefix} Failed to update statistics of node ${node.id}: $err")
-		return
+	if (node.timeout_claimed_resources == 0) {
+		stats := d.zos.get_zos_statistics(node.twinid) or {
+			d.logger.error("${data_manager_prefix} Failed to update statistics of node ${node.id}: $err")
+			return
+		}
+		node.update_resources(stats)
+	} else {
+		node.timeout_claimed_resources -= 1
 	}
-	node.update_resources(stats)
 	node.public_config = d.zos.zos_has_public_config(node.twinid) or {
 		d.logger.error("${data_manager_prefix} Failed to update public config of node ${node.id}: $err")
 		return

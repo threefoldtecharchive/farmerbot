@@ -14,7 +14,7 @@ pub enum FarmerbotState as u8 {
 	start
 }
 
-pub struct Farm{
+pub struct Farm {
 pub mut:
 	id u32
 	description string
@@ -28,7 +28,7 @@ pub enum PowerState as u8 {
 	shuttingdown
 }
 
-pub struct Node{
+pub struct Node {
 pub mut:
 	id u32
 	twinid u32
@@ -41,6 +41,7 @@ pub mut:
 	wg_ports []u16
 	resources ConsumableResources
 	powerstate PowerState
+	timeout_claimed_resources u8
 	last_time_powerstate_changed Time
 	last_time_awake Time
 }
@@ -79,7 +80,7 @@ pub mut:
 	system Capacity
 }
 
-pub struct Capacity{
+pub struct Capacity {
 pub mut:
 	cru	 u64 
 	sru  u64
@@ -115,7 +116,7 @@ fn (a Capacity) - (b Capacity) Capacity {
 }
 
 [heap]
-pub struct DB{
+pub struct DB {
 pub mut:
 	wake_up_threshold u8 = default_wake_up_threshold
 	periodic_wakeup_start Duration 
