@@ -38,6 +38,7 @@ pub mut:
 	dedicated bool
 	public_config bool
 	public_ips_used u64
+	wg_ports []u16
 	resources ConsumableResources
 	powerstate PowerState
 	last_time_powerstate_changed Time
@@ -47,11 +48,12 @@ pub mut:
 pub fn (mut n Node) update_resources(zos_stats &ZosResourcesStatistics) {
 	n.resources.total.update(zos_stats.total)
 	n.resources.used.update(zos_stats.used)
+	n.resources.system.update(zos_stats.system)
 	n.public_ips_used = zos_stats.used.ipv4u
 }
 
 pub fn (n &Node) is_unused() bool {
-	return n.resources.used.is_empty()
+	return (n.resources.used - n.resources.system).is_empty()
 }
 
 pub fn (n &Node) can_claim_resources(cap &Capacity) bool {
@@ -74,6 +76,7 @@ pub mut:
 	overprovision_cpu f32  // how much we allow overprovisioning the CPU range: [1;3]
 	total Capacity
 	used Capacity
+	system Capacity
 }
 
 pub struct Capacity{
@@ -88,7 +91,7 @@ pub fn (mut c Capacity) update(z &ZosResources) {
 	c.cru = z.cru
 	c.sru = z.sru
 	c.mru = z.mru
-	c.hru = z.mru
+	c.hru = z.hru
 }
 
 pub fn (mut c Capacity) add(other &Capacity) {

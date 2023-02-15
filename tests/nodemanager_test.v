@@ -36,7 +36,7 @@ fn test_find_node_required_resources() {
 }
 
 //   Test finding a node with minimal required resources
-//   The required resources is more then what the first nodes can handle
+//   The required resources is more then what the first node can handle
  fn test_find_node_required_resources_selecting_second_node() {
 	run_test("test_find_node_required_resources_selecting_second_node", 
 		fn (mut farmerbot Farmerbot, mut client Client) ! {

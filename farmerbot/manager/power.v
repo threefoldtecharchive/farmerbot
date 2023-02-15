@@ -83,17 +83,24 @@ fn (mut p PowerManager) power_management() {
 			}
 		}
 	} else {
-		nodes_able_to_shutdown := p.db.nodes.values().filter(it.powerstate == .on && it.is_unused())
-		if nodes_able_to_shutdown.len > 1 {
+		unused_nodes := p.db.nodes.values().filter(it.powerstate == .on && it.is_unused())
+		// nodes with public config can't be shutdown
+		nodes_allowed_to_shutdown := unused_nodes.filter(!it.public_config)
+		if unused_nodes.len > 1 {
 			// shutdown a node if there is more then 1 unused node (aka keep at least one node online)
-			node := nodes_able_to_shutdown.last()
-			new_used_resources := (used_resources - node.resources.used.hru - node.resources.used.sru - node.resources.used.mru - node.resources.used.cru)
-			new_total_resources := (total_resources - node.resources.total.hru - node.resources.total.sru - node.resources.total.mru - node.resources.total.cru)
-			if 100 * new_used_resources / new_total_resources < p.db.wake_up_threshold {
-				// we need to keep the resource percentage lower then the threshold
-				p.logger.info("${power_manager_prefix} Resource usage too low: ${resource_usage}. Turning of unused node ${node.id}")
-				p.schedule_power_job(node.id, .off) or {
-					p.logger.error("${power_manager_prefix} Job to power off node ${node.id} failed.")
+			for node in nodes_allowed_to_shutdown {
+				new_used_resources := (used_resources - node.resources.used.hru - node.resources.used.sru - node.resources.used.mru - node.resources.used.cru)
+				new_total_resources := (total_resources - node.resources.total.hru - node.resources.total.sru - node.resources.total.mru - node.resources.total.cru)
+				if 100 * new_used_resources / new_total_resources < p.db.wake_up_threshold {
+					// we need to keep the resource percentage lower then the threshold
+					p.logger.info("${power_manager_prefix} Resource usage too low: ${resource_usage}. Turning of unused node ${node.id}")
+					p.schedule_power_job(node.id, .off) or {
+						p.logger.error("${power_manager_prefix} Job to power off node ${node.id} failed.")
+						// let's try the next one
+						continue
+					}
+					// shutdown only one node
+					break
 				}
 			}
 		}

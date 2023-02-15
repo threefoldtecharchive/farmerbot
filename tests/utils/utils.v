@@ -36,6 +36,9 @@ pub fn (mut z ZosMock) get_zos_statistics(dst u32) !ZosResourcesStatistics {
 pub fn (mut z ZosMock) get_zos_system_version(dst u32) !string {
 	return ""
 }
+pub fn (mut z ZosMock) get_zos_wg_ports(dst u32) ![]u16 {
+	return []
+}
 
 pub type Test = fn (mut farmerbot Farmerbot, mut client Client) !
 
@@ -73,6 +76,16 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 	}
 	f.init() or {
 		return error("Failed creating farmerbot: $err")
+	}
+
+	for mut node in f.db.nodes.values() {
+		// Simulate resources being used by ZOS
+		node.resources.system = system.Capacity {
+			cru: 0
+            sru: 100 * 1024 * 1024 *1024
+            mru: 2 * 1024 * 1024 * 1024
+            hru: 0
+		}
 	}
 
 	t_ar := spawn (&f.actionrunner).run()

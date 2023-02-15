@@ -314,7 +314,8 @@ fn test_power_management_resource_usage_too_low() {
 			farmerbot.managers["powermanager"].update()
 
 			// assert
-			assert farmerbot.db.nodes[8].powerstate == .shuttingdown
+			assert farmerbot.db.nodes[5].powerstate == .shuttingdown
+			assert farmerbot.db.nodes[8].powerstate == .on
 		}
 	)!
 }
