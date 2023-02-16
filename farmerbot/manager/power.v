@@ -86,21 +86,26 @@ fn (mut p PowerManager) power_management() {
 		unused_nodes := p.db.nodes.values().filter(it.powerstate == .on && it.is_unused())
 		// nodes with public config can't be shutdown
 		nodes_allowed_to_shutdown := unused_nodes.filter(!it.public_config)
+
 		if unused_nodes.len > 1 {
 			// shutdown a node if there is more then 1 unused node (aka keep at least one node online)
+			// TODO => check that we have at least one node left online
+			mut new_used_resources := used_resources
+			mut new_total_resources := total_resources
+			mut nodes_left_online := unused_nodes.len
 			for node in nodes_allowed_to_shutdown {
-				new_used_resources := (used_resources - node.resources.used.hru - node.resources.used.sru - node.resources.used.mru - node.resources.used.cru)
-				new_total_resources := (total_resources - node.resources.total.hru - node.resources.total.sru - node.resources.total.mru - node.resources.total.cru)
+				if nodes_left_online == 1 {
+					break
+				}
+				nodes_left_online -= 1
+				new_used_resources -= node.resources.used.hru + node.resources.used.sru + node.resources.used.mru + node.resources.used.cru
+				new_total_resources -= node.resources.total.hru + node.resources.total.sru + node.resources.total.mru + node.resources.total.cru
 				if 100 * new_used_resources / new_total_resources < p.db.wake_up_threshold {
 					// we need to keep the resource percentage lower then the threshold
 					p.logger.info("${power_manager_prefix} Resource usage too low: ${resource_usage}. Turning of unused node ${node.id}")
 					p.schedule_power_job(node.id, .off) or {
 						p.logger.error("${power_manager_prefix} Job to power off node ${node.id} failed: $err")
-						// let's try the next one
-						continue
 					}
-					// shutdown only one node
-					break
 				}
 			}
 		} else {
