@@ -103,6 +103,8 @@ fn (mut p PowerManager) power_management() {
 					break
 				}
 			}
+		} else {
+			p.logger.debug("${power_manager_prefix} Nothing to shutdown.")
 		}
 	}
 }
@@ -132,7 +134,6 @@ fn (mut p PowerManager) nodeid_from_args(job &jobs.ActionJob) !u32 {
 }
 
 fn (mut p PowerManager) poweron(mut job jobs.ActionJob) ! {
-	//make sure the node is powered on
 	p.logger.info("${power_manager_prefix} Executing job: POWERON")
 
 	nodeid := p.nodeid_from_args(&job)!
@@ -151,8 +152,7 @@ fn (mut p PowerManager) poweron(mut job jobs.ActionJob) ! {
 }
 
 fn (mut p PowerManager) poweroff(mut job jobs.ActionJob) ! {
-	//make sure the node is powered off
-	p.logger.info("${power_manager_prefix} Executing job: POWEROFF: ${p.tfchain}")
+	p.logger.info("${power_manager_prefix} Executing job: POWEROFF")
 
 	nodeid := p.nodeid_from_args(&job)!
 

@@ -46,16 +46,23 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 		// No response from ZOS node: if the state is waking up we wait for either the node to come up or the
 		// timeout to hit. If the time out hits we change the state to off (AKA unsuccessful wakeup)
 		// If the state was not waking up the node is considered off
-		if node.powerstate == .wakingup {
-			if time.since(node.last_time_powerstate_changed) < timeout_powerstate_change {
-				d.logger.debug("${data_manager_prefix} Node ${node.id} is waking up.")
-				return false
+		match node.powerstate {
+			.wakingup {
+				if time.since(node.last_time_powerstate_changed) < timeout_powerstate_change {
+					d.logger.debug("${data_manager_prefix} Node ${node.id} is waking up.")
+					return false
+				}
+				d.logger.error("${data_manager_prefix} Node ${node.id} wakeup was unsuccessful. Putting its state back to off.")
 			}
-			d.logger.error("${data_manager_prefix} Node ${node.id} wakeup was unsuccessful. Putting its state back to off.")
-		} else if node.powerstate == .shuttingdown {
-			d.logger.debug("${data_manager_prefix} Node ${node.id} shutdown was successful.")
-		} else {
-			d.logger.error("${data_manager_prefix} Node ${node.id} is not responding while we expect it to!")
+			.shuttingdown {
+				d.logger.debug("${data_manager_prefix} Node ${node.id} shutdown was successful.")
+			}
+			.on {
+				d.logger.error("${data_manager_prefix} Node ${node.id} is not responding while we expect it to!")
+			}
+			else {
+				d.logger.error("${data_manager_prefix} Node ${node.id} is offline.")
+			}
 		}
 		node.powerstate = .off
 		node.last_time_powerstate_changed = time.now()
@@ -98,5 +105,5 @@ fn (mut d DataManager) update_node_data(nodeid u32) {
 		d.logger.error("${data_manager_prefix} Failed to update the wireguard ports used by node ${node.id}: $err")
 		return
 	}
-	d.logger.debug("${data_manager_prefix} capacity updated for node ${node.id}:\n${node.resources}")
+	d.logger.debug("${data_manager_prefix} Capacity updated for node ${node.id}:\n${node.resources}")
 }
