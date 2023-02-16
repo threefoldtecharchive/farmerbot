@@ -14,7 +14,57 @@ Actors can schedule the execution of jobs for other actors which might or might 
 
 Jobs don't have to originate from the system running the farmerbot. It may as well be scheduled from another system (with another twin id). The job to find a suitable node for example will come from the TSClient (which is located on another system). These jobs will be send from the TSClient to the farmerbot via [RMB](https://github.com/threefoldtech/rmb-rs).
 
-### Jobs
+## Configuration
+As mentioned before the farmerbot can be configured through markup definition files. This section will guide you through the possibilities.
+
+### Nodes
+The farmerbot requires you to setup the nodes that the farmerbot should handle. 
+Required attributes:
+- id
+- twinid
+
+Optional attributes:
+- cpuoverprovision => a value between 1 and 4 defining how much the cpu can be overprovisioned (2 means double the amount of cpus)
+- public_config => true or false telling the farmerbot whether or not the node has a public config
+- dedicated => true or false telling the farmerbot whether or not the node is dedicated (only allow renting the full node)
+- certified => true or false telling the farmerbot whether or not the node is certified
+
+Example:
+```
+!!farmerbot.nodemanager.define
+    id:20
+    twinid:105
+    public_config:true
+    dedicated:1
+    certified:yes
+    cpuoverprovision:1
+```
+
+### Power
+The powermanagement behavior is configurable through the following attributes (they are optional):
+- wake_up_threshold => a value between 50 and 80 defining the threshold at which nodes will be powered on or powered off. If the usage percentage (total used resources devided by the total amount of resources) is greater then the threshold a new node will be powered on. In the other case the farmerbot will try to power off nodes if possible.
+- periodic_wakeup => the time at which the periodic wakeups (powering on a node that is off) should happen. The offline nodes will be powered sequentially with 5 minutes in between so we cannot guarantee that the node will be powered on at that exact moment. 
+
+Example:
+```
+!!farmerbot.powermanager.define
+    wake_up_threshold:75
+    periodic_wakeup:8:30AM
+```
+
+### Farm
+Two more settings are required regarding the farm:
+- id => the id of the farm
+- public_ips => the amount of public ips that the farm has (don't forget to set this value)
+
+Example:
+```
+!!farmerbot.farmmanager.define
+    id:3
+    public_ips:2
+```
+
+## Jobs
 
 __farmerbot.nodemanager.findnode__
 
