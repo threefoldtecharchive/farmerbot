@@ -3,7 +3,7 @@ Welcome to the farmerbot. The farmerbot is a service that a farmer can run allow
 
 The key feature of the farmerbot is powermanagement. The farmerbot will automatically shutdown nodes from its farm whenever possible and bring them back on when they are needed using Wake-on-Lan (WOL). It will try to maximize downtime as much as possible by recommending which nodes to use, this is one of the requests that the farmerbot can handle (asking for a node to deploy on).
 
-The behavior of the farmerbot is customizable through markup definition files. You can find an example [here](example_data/1_data/nodes.md). 
+The behavior of the farmerbot is customizable through markup definition files. You can find an example [here](example_data/nodes.md). 
 
 ## Under the hood
 The farmerbot has been implemented using the actor model principles. It contains two actors that are able to execute jobs (actions that need to be executed by a specific actor).
@@ -13,6 +13,40 @@ The first actor is the nodemanager which is in charge of executing jobs related 
 Actors can schedule the execution of jobs for other actors which might or might not be running on the same system. For example, the nodemanager might schedule the execution of a job to power on a node (which is meant for the powermanager). The repository [baobab](https://github.com/freeflowuniverse/baobab) contains the logic for scheduling jobs.
 
 Jobs don't have to originate from the system running the farmerbot. It may as well be scheduled from another system (with another twin id). The job to find a suitable node for example will come from the TSClient (which is located on another system). These jobs will be send from the TSClient to the farmerbot via [RMB](https://github.com/threefoldtech/rmb-rs).
+
+### Jobs
+
+__farmerbot.nodemanager.findnode__
+
+This job allows you to look for a node with specific requirements (minimum amount of resources, public config, etc). You will get the job id as a result. The farmerbot will power on the node if the node is off. It will also claim the required resources for 30 minutes. After that, if the user has not deployed anything on the node the resources will be freed and the node might go down again if it was put on by that job.
+
+Arguments (all arguments are optional):
+- _certified : bool_ => whether or not you want a certified node (not adding this argument means you don't care whether you get a certified or non certified node)
+- _public_config : bool_ => whether or not you want a node with a public config (not adding this argument means you don't care whether or not the node has a public config)
+- _public_ips : u32_ => how much public ips you need
+- _dedicated : bool_ => whether you want a dedicated node (rent the full node)
+- _node_exclude : []u32_ => the node ids you want to exclude in your search
+- _required_hru : u64_ => the amount of hru required
+- _required_sru : u64_ => the amount of sru required
+- _required_mru : u64_ => the amount of mru required
+- _required_cru : u64_ => the amount of cru required
+
+Result:
+- _nodeid : u32_ => the node id that meets your requirements
+
+__farmerbot.powermanager.poweron__
+
+This job is only allowed to be executed if it comes from the farmer (the twinid should equal the farmer's twinid). It will power on the node specified in the arguments.
+
+Arguments:
+- _nodeid : u32_ => the node id of the node that needs to powered on
+
+__farmerbot.powermanager.poweroff__
+
+This job is only allowed to be executed if it comes from the farmer (the twinid should equal the farmer's twinid). It will power off the node specified in the arguments.
+
+Arguments:
+- _nodeid : u32_ => the node id of the node that needs to powered off
 
 ## Dependencies
 The farmerbot has the following dependencies

@@ -122,7 +122,7 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 		possible_nodes << node
 	}
 
-	// Sort the nodes on power state (the ones that are ON first)
+	// Sort the nodes on power state (the ones that are ON first then wakingup, off, shuttingdown)
 	possible_nodes.sort_with_compare(fn (a &&system.Node, b &&system.Node) int {
          if a.powerstate == b.powerstate {
              return 0
@@ -137,25 +137,28 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 		return error("Could not find a suitable node")
 	}
 
-	n.logger.debug("Found a node: ${possible_nodes[0]}")
+	mut node := possible_nodes[0]
+	n.logger.debug("${node_manager_prefix} Found a node: ${node}")
 	
 	// claim the resources until next update of the data
 	// add a timeout (after 6 rounds of update we update the resources, 30 minutes)
-	possible_nodes[0].timeout_claimed_resources = 6
+	node.timeout_claimed_resources = 6
 	if dedicated {
 		// claim all capacity
-		possible_nodes[0].claim_resources(possible_nodes[0].resources.total)
+		node.claim_resources(node.resources.total)
 	} else {
-		possible_nodes[0].claim_resources(required_capacity)
+		node.claim_resources(required_capacity)
 	}
 
 	// claim public ips until next update of the data
 	if public_ips > 0 {
-		possible_nodes[0].public_ips_used += public_ips
+		node.public_ips_used += public_ips
 	}
 
-	job.result.kwarg_add("nodeid", "${possible_nodes[0].id}")
-	if possible_nodes[0].powerstate == system.PowerState.off {
+	job.result.kwarg_add("nodeid", "${node.id}")
+
+	// power on the node if it is down or if it is shutting down
+	if node.powerstate == system.PowerState.off || node.powerstate == system.PowerState.shuttingdown {
 		_ := n.client.job_new_schedule(
 			twinid: job.twinid,
 			action: system.job_power_on,

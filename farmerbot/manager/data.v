@@ -49,19 +49,19 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 		match node.powerstate {
 			.wakingup {
 				if time.since(node.last_time_powerstate_changed) < timeout_powerstate_change {
-					d.logger.debug("${data_manager_prefix} Node ${node.id} is waking up.")
+					d.logger.info("${data_manager_prefix} Node ${node.id} is waking up.")
 					return false
 				}
 				d.logger.error("${data_manager_prefix} Node ${node.id} wakeup was unsuccessful. Putting its state back to off.")
 			}
 			.shuttingdown {
-				d.logger.debug("${data_manager_prefix} Node ${node.id} shutdown was successful.")
+				d.logger.info("${data_manager_prefix} Node ${node.id} shutdown was successful.")
 			}
 			.on {
 				d.logger.error("${data_manager_prefix} Node ${node.id} is not responding while we expect it to!")
 			}
 			else {
-				d.logger.error("${data_manager_prefix} Node ${node.id} is offline.")
+				d.logger.info("${data_manager_prefix} Node ${node.id} is OFF.")
 			}
 		}
 		node.powerstate = .off
@@ -73,12 +73,12 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 	// down the down a failure and set teh powerstate back to on
 	if node.powerstate == .shuttingdown {
 		if time.since(node.last_time_powerstate_changed) < timeout_powerstate_change {
-			d.logger.debug("${data_manager_prefix} Node ${node.id} is shutting down.")
+			d.logger.info("${data_manager_prefix} Node ${node.id} is shutting down.")
 			return false
 		}
 		d.logger.error("${data_manager_prefix} Node ${node.id} shutdown was unsuccessful. Putting its state back to on.")
 	} else {
-		d.logger.debug("${data_manager_prefix} Node ${node.id} is online.")
+		d.logger.info("${data_manager_prefix} Node ${node.id} is ON.")
 	}
 	node.powerstate = .on
 	node.last_time_powerstate_changed = time.now()
@@ -94,6 +94,7 @@ fn (mut d DataManager) update_node_data(nodeid u32) {
 			return
 		}
 		node.update_resources(stats)
+		d.logger.debug("${data_manager_prefix} Capacity updated for node ${node.id}:\n${node.resources}")
 	} else {
 		node.timeout_claimed_resources -= 1
 	}
@@ -105,5 +106,4 @@ fn (mut d DataManager) update_node_data(nodeid u32) {
 		d.logger.error("${data_manager_prefix} Failed to update the wireguard ports used by node ${node.id}: $err")
 		return
 	}
-	d.logger.debug("${data_manager_prefix} Capacity updated for node ${node.id}:\n${node.resources}")
 }

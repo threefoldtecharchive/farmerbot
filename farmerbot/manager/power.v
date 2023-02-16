@@ -11,7 +11,6 @@ import time
 
 const (
 	power_manager_prefix = "[POWERMANAGER]"
-	periodic_wakeup_interval = time.hour * 23
 )
 
 [heap]
@@ -32,10 +31,10 @@ pub fn (mut p PowerManager) init(mut action actions.Action) ! {
 }
 
 pub fn (mut p PowerManager) execute(mut job jobs.ActionJob) ! {
-	if job.action == system.job_power_on {
+	if job.src_twinid == p.client.twinid && job.action == system.job_power_on {
 		p.poweron(mut job)!
 	}
-	if job.action == system.job_power_off {
+	if job.src_twinid == p.client.twinid && job.action == system.job_power_off {
 		p.poweroff(mut job)!
 	}
 }
@@ -52,6 +51,7 @@ fn (mut p PowerManager) periodic_wakeup() {
 	if periodic_wakeup_start <= now {
 		for mut node in p.db.nodes.values().filter(it.powerstate == .off) {
 			if node.last_time_awake < periodic_wakeup_start {
+				p.logger.info("${power_manager_prefix} Periodic wakeup for node ${node.id}")
 				p.schedule_power_job(node.id, .on) or {
 					p.logger.error("${power_manager_prefix} Job to power on node ${node.id} failed: $err")
 					continue
@@ -139,16 +139,15 @@ fn (mut p PowerManager) nodeid_from_args(job &jobs.ActionJob) !u32 {
 }
 
 fn (mut p PowerManager) poweron(mut job jobs.ActionJob) ! {
-	p.logger.info("${power_manager_prefix} Executing job: POWERON")
-
 	nodeid := p.nodeid_from_args(&job)!
+	p.logger.info("${power_manager_prefix} Executing job: POWERON ${nodeid}")
+	p.logger.debug("${power_manager_prefix} $job")
 
 	if p.db.nodes[nodeid].powerstate == .wakingup ||
 		p.db.nodes[nodeid].powerstate == .on {
 		// nothing to do
 		return
 	}
-	p.ensure_node_is_on_or_off(nodeid)!
 
 	p.tfchain.set_node_power(nodeid, .on)!
 
@@ -157,16 +156,16 @@ fn (mut p PowerManager) poweron(mut job jobs.ActionJob) ! {
 }
 
 fn (mut p PowerManager) poweroff(mut job jobs.ActionJob) ! {
-	p.logger.info("${power_manager_prefix} Executing job: POWEROFF")
-
 	nodeid := p.nodeid_from_args(&job)!
+	p.logger.info("${power_manager_prefix} Executing job: POWEROFF ${nodeid}")
+	p.logger.debug("${power_manager_prefix} $job")
+
 
 	if p.db.nodes[nodeid].powerstate == .shuttingdown ||
 		p.db.nodes[nodeid].powerstate == .off {
 		// nothing to do
 		return
 	}
-	p.ensure_node_is_on_or_off(nodeid)!
 	if p.db.nodes.values().filter(it.powerstate == .on).len < 2 {
 		return error("Cannot power off node, at least one node should be on in the farm.")
 	}
@@ -175,15 +174,6 @@ fn (mut p PowerManager) poweroff(mut job jobs.ActionJob) ! {
 
 	p.db.nodes[nodeid].powerstate = .shuttingdown
 	p.db.nodes[nodeid].last_time_powerstate_changed = time.now()
-}
-
-fn (p &PowerManager) ensure_node_is_on_or_off(nodeid u32) ! {
-	if p.db.nodes[nodeid].powerstate == .wakingup {
-		return error("Node is waking up")
-	}
-	if p.db.nodes[nodeid].powerstate == .shuttingdown {
-		return error("Node is shutting down")
-	}
 }
 
 fn (mut p PowerManager) schedule_power_job(nodeid u32, powerstate system.PowerState) ! {
