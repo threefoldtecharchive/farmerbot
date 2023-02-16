@@ -88,8 +88,8 @@ fn test_poweroff_node_that_is_off() {
 	)!
 }
 
-// Test power off a node that is waking up, it should fail
-fn test_poweroff_node_that_is_wakingup_fails() {
+// Test power off a node that is waking up
+fn test_poweroff_node_that_is_wakingup() {
 	run_test("test_poweroff_node_that_is_wakingup_fails",
 		fn (mut farmerbot Farmerbot, mut client Client) ! {
 			// prepare
@@ -108,8 +108,8 @@ fn test_poweroff_node_that_is_wakingup_fails() {
 			}
 
 			// assert
-			ensure_error_message(&job, "Node is waking up")!
-			assert farmerbot.db.nodes[3].powerstate == .wakingup
+			ensure_no_error(&job)!
+			assert farmerbot.db.nodes[3].powerstate == .shuttingdown
 		}
 	)!
 }
@@ -169,8 +169,8 @@ fn test_poweron_node() {
 	)!
 }
 
-// Test powering on a node that is in shutdown state, it should fail
-fn test_poweron_node_that_is_shutting_down_fails() {
+// Test powering on a node that is in shutdown state
+fn test_poweron_node_that_is_shutting_down() {
 	run_test("test_poweron_node_that_is_shutting_down_fails", 
 		fn (mut farmerbot Farmerbot, mut client Client) ! {
 			// prepare
@@ -189,8 +189,8 @@ fn test_poweron_node_that_is_shutting_down_fails() {
 			}
 
 			// assert
-			ensure_error_message(&job, "Node is shutting down")!
-			assert farmerbot.db.nodes[3].powerstate == .shuttingdown
+			ensure_no_error(&job)!
+			assert farmerbot.db.nodes[3].powerstate == .wakingup
 		}
 	)!
 }

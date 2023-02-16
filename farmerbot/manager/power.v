@@ -31,11 +31,13 @@ pub fn (mut p PowerManager) init(mut action actions.Action) ! {
 }
 
 pub fn (mut p PowerManager) execute(mut job jobs.ActionJob) ! {
-	if job.src_twinid == p.client.twinid && job.action == system.job_power_on {
-		p.poweron(mut job)!
-	}
-	if job.src_twinid == p.client.twinid && job.action == system.job_power_off {
-		p.poweroff(mut job)!
+	if job.src_twinid == p.client.twinid || job.src_twinid == 0 { 
+		if job.action == system.job_power_on {
+			p.poweron(mut job)!
+		}
+		if job.action == system.job_power_off {
+			p.poweroff(mut job)!
+		}
 	}
 }
 
