@@ -12,11 +12,14 @@ pub struct RmbMessage {
 pub mut:
 	ver int = 1
 	cmd string
+	src string
+	ref string
 	exp u64
 	dat string
 	dst []u32
     ret string
-	now i64
+	now u64
+	shm string
 }
 
 pub struct RmbError {
@@ -70,14 +73,14 @@ mut:
 }
 
 fn (mut z ZosRMBPeer) rmb_client_request(cmd string, dst u32) !RmbResponse {
-	mut msg:= RmbMessage {
+	msg := RmbMessage {
 			ver: 1
 			cmd: cmd
 			exp: 5
 			dat: base64.encode_str("")
 			dst: [dst]
 			ret: rand.uuid_v4()
-			now: time.now().unix_time()
+			now: u64(time.now().unix_time())
 	}
 	request := json.encode_pretty(msg)
 	z.redis.lpush('msgbus.system.local', request)!

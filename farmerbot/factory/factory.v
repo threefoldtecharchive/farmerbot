@@ -34,7 +34,7 @@ fn (mut f Farmerbot) update() {
 			manager.update()
 		}
 		delta := time.now()-time_start
-		f.logger.debug("Elapsed time for update: ${delta.minutes()}")
+		f.logger.info("Elapsed time for update: ${delta.minutes()}")
 		time_to_sleep := if delta.minutes() >= 5 { 0 } else { 5 - delta.minutes() }
 		time.sleep(time.minute * time_to_sleep)
 	}
