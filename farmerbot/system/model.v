@@ -41,7 +41,7 @@ pub mut:
 	wg_ports []u16
 	resources ConsumableResources
 	powerstate PowerState
-	timeout_claimed_resources u8
+	timeout_claimed_resources Time
 	last_time_powerstate_changed Time
 	last_time_awake Time
 }

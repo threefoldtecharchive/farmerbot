@@ -3,9 +3,11 @@ module manager
 import freeflowuniverse.baobab.actions
 import freeflowuniverse.baobab.client
 import freeflowuniverse.baobab.jobs
+import freeflowuniverse.crystallib.params { Params }
 import threefoldtech.farmerbot.system { Node }
 
 import log
+import time
 
 const (
 	node_manager_prefix = "[NODEMANAGER]"
@@ -141,8 +143,8 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	n.logger.debug("${node_manager_prefix} Found a node: ${node}")
 	
 	// claim the resources until next update of the data
-	// add a timeout (after 6 rounds of update we update the resources, 30 minutes)
-	node.timeout_claimed_resources = 6
+	// add a timeout (30 minutes)
+	node.timeout_claimed_resources = time.now().add(time.minute * 30)
 	if dedicated {
 		// claim all capacity
 		node.claim_resources(node.resources.total)
@@ -160,7 +162,7 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	// power on the node if it is down or if it is shutting down
 	if node.powerstate == system.PowerState.off || node.powerstate == system.PowerState.shuttingdown {
 		_ := n.client.job_new_schedule(
-			twinid: job.twinid,
+			twinid: n.client.twinid,
 			action: system.job_power_on,
 			args: job.result,
 			actionsource: system.job_node_find)!

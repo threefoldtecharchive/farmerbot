@@ -87,6 +87,9 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
             hru: 0
 		}
 	}
+	f.processor.reset() or {
+		return error("Failed resetting processor: $err")
+	}
 
 	t_ar := spawn (&f.actionrunner).run()
 	t_pr := spawn (&f.processor).run()
@@ -114,6 +117,19 @@ pub fn run_test(name string, test Test) ! {
 	testenvironment.run(name, test)!
 }
 
+pub fn powermanager_update(mut client Client) ! {
+	_ := client.job_new_wait(
+		twinid: client.twinid,
+		action: system.job_power_periodicwakeup,
+		args: Params {},
+		actionsource: "")!
+
+	_ := client.job_new_wait(
+		twinid: client.twinid,
+		action: system.job_power_powermanagement,
+		args: Params {},
+		actionsource: "")!
+}
 
 pub fn wait_till_jobs_are_finished(actor string, mut client Client) ! {
  	for client.check_remaining_jobs(actor)! > 0 {

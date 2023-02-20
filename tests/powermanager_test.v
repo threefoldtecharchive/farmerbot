@@ -1,7 +1,8 @@
 module main
 
 import utils { 
-	ensure_error_message, ensure_no_error, put_usage_to_x_procent, run_test
+	ensure_error_message, ensure_no_error, powermanager_update,
+	put_usage_to_x_procent, run_test
 }
 import freeflowuniverse.baobab.client { Client }
 import freeflowuniverse.crystallib.params { Params }
@@ -256,6 +257,7 @@ fn test_power_management_resource_usage_too_high() {
 			farmerbot.db.wake_up_threshold = 80
 			for mut node in farmerbot.db.nodes.values() {
 				node.powerstate = .off
+				node.last_time_awake = time.now()
 			}
 			farmerbot.db.nodes[3].powerstate = .on
 			put_usage_to_x_procent(mut farmerbot.db.nodes[3], 80)
@@ -278,6 +280,7 @@ fn test_power_management_resource_usage_is_perfect() {
 			// prepare
 			farmerbot.db.wake_up_threshold = 80
 			for mut node in farmerbot.db.nodes.values() {
+				node.last_time_awake = time.now()
 				node.powerstate = .off
 			}
 			farmerbot.db.nodes[3].powerstate = .on
