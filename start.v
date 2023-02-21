@@ -1,6 +1,7 @@
 module main
 
 import threefoldtech.farmerbot.factory
+import threefoldtech.farmerbot.system
 
 import flag
 import log
@@ -12,7 +13,7 @@ const default_redis_address = "localhost:6379"
 
 fn main() {
 	mut fp := flag.new_flag_parser(os.args)
-	fp.application('Welcome to the farmerbot. The farmerbot is a service that a farmer can run allowing him to automatically manage the nodes of his farm.')
+	fp.application('Welcome to the farmerbot (${system.version}). The farmerbot is a service that a farmer can run allowing him to automatically manage the nodes of his farm.')
 	fp.limit_free_args(0, 0)!
 	fp.description('')
 	fp.skip_executable()
@@ -22,12 +23,18 @@ fn main() {
 	output_file := fp.string('output', `o`, '', 'The file to save the logs of the farmerbot in.')
 	network := fp.string('network', `n`, 'DEV', 'The network to run on.')
 	debug_log := fp.bool('debug', 0, false, 'By setting this flag the farmerbot will print debug logs too.')
+	version := fp.bool('version', 0, false, 'Print the version of the farmebot')
 
 	_ := fp.finalize() or {
 		eprintln(err)
 		println(fp.usage())
-		return
+		exit(1)
 	}
+	if version {
+		println(system.version)
+		exit(0)
+	}
+
 	if debug_log {
 		os.setenv("FARMERBOT_LOG_LEVEL", "DEBUG", true)
 	}
