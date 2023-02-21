@@ -66,37 +66,39 @@ Example:
 
 ## Jobs
 
+Jobs can be send to the farmerbot via RMB. This section describes the arguments that they accept. Please take a look at [baobab](https://github.com/freeflowuniverse/baobab) for more information on how you should construct such a job (**especially how you can add the arguments**).
+
 __farmerbot.nodemanager.findnode__
 
 This job allows you to look for a node with specific requirements (minimum amount of resources, public config, etc). You will get the job id as a result. The farmerbot will power on the node if the node is off. It will also claim the required resources for 30 minutes. After that, if the user has not deployed anything on the node the resources will be freed and the node might go down again if it was put on by that job.
 
-Arguments (all arguments are optional):
-- _certified : bool_ => whether or not you want a certified node (not adding this argument means you don't care whether you get a certified or non certified node)
-- _public_config : bool_ => whether or not you want a node with a public config (not adding this argument means you don't care whether or not the node has a public config)
-- _public_ips : u32_ => how much public ips you need
-- _dedicated : bool_ => whether you want a dedicated node (rent the full node)
-- _node_exclude : []u32_ => the node ids you want to exclude in your search
-- _required_hru : u64_ => the amount of hru required
-- _required_sru : u64_ => the amount of sru required
-- _required_mru : u64_ => the amount of mru required
-- _required_cru : u64_ => the amount of cru required
+Arguments (all arguments are optional and ):
+- _certified_ => whether or not you want a certified node (not adding this argument means you don't care whether you get a certified or non certified node)
+- _public_config_ => whether or not you want a node with a public config (not adding this argument means you don't care whether or not the node has a public config)
+- _public_ips_ => how much public ips you need
+- _dedicated_ => whether you want a dedicated node (rent the full node)
+- _node_exclude_ => the node ids you want to exclude in your search
+- _required_hru_ => the amount of hru required in kilobytes (add suffix mb or gb to define the required resources in megabyte or gygabite)
+- _required_sru_ => the amount of sru required in kilobytes (add suffix mb or gb to define the required resources in megabyte or gygabite)
+- _required_mru_ => the amount of mru required in kilobytes (add suffix mb or gb to define the required resources in megabyte or gygabite)
+- _required_cru_ => the amount of cru required
 
 Result:
-- _nodeid : u32_ => the node id that meets your requirements
+- _nodeid_ => the node id that meets your requirements
 
 __farmerbot.powermanager.poweron__
 
 This job is only allowed to be executed if it comes from the farmer (the twinid should equal the farmer's twinid). It will power on the node specified in the arguments.
 
 Arguments:
-- _nodeid : u32_ => the node id of the node that needs to powered on
+- _nodeid_ => the node id of the node that needs to powered on
 
 __farmerbot.powermanager.poweroff__
 
 This job is only allowed to be executed if it comes from the farmer (the twinid should equal the farmer's twinid). It will power off the node specified in the arguments.
 
 Arguments:
-- _nodeid : u32_ => the node id of the node that needs to powered off
+- _nodeid_ => the node id of the node that needs to powered off
 
 ## Dependencies
 The farmerbot has the following dependencies
