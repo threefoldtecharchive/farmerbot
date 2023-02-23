@@ -4,7 +4,6 @@ import threefoldtech.farmerbot.factory
 import threefoldtech.farmerbot.system
 
 import flag
-import log
 import os
 
 const default_data_dir = os.dir(@FILE) + '/example_data'

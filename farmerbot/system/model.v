@@ -40,6 +40,8 @@ pub mut:
 	public_ips_used u64
 	wg_ports []u16
 	resources ConsumableResources
+	pools []ZosPool
+	contracts TfChainContracts
 	powerstate PowerState
 	timeout_claimed_resources Time
 	last_time_powerstate_changed Time
@@ -53,13 +55,24 @@ pub fn (mut n Node) update_resources(zos_stats &ZosResourcesStatistics) {
 	n.public_ips_used = zos_stats.used.ipv4u
 }
 
+pub fn (n &Node) has_rent_contract() bool {
+	return n.contracts.rent_contracts.len > 0
+}
+
 pub fn (n &Node) is_unused() bool {
-	return (n.resources.used - n.resources.system).is_empty()
+	return (n.resources.used - n.resources.system).is_empty() 
+			&& n.contracts.name_contracts.len == 0 
+			&& n.contracts.node_contracts.len == 0
+			&& n.contracts.rent_contracts.len == 0
 }
 
 pub fn (n &Node) can_claim_resources(cap &Capacity) bool {
 	free := n.capacity_free()
-	return n.resources.total.cru >= cap.cru && free.cru >= cap.cru && free.mru >= cap.mru && free.hru >= cap.hru && free.sru >= cap.sru
+	return n.resources.total.cru >= cap.cru 
+			&& free.cru >= cap.cru 
+			&& free.mru >= cap.mru
+			&& free.hru >= cap.hru 
+			&& free.sru >= cap.sru
 }
 
 pub fn (mut n Node) claim_resources(cap &Capacity) {

@@ -180,7 +180,7 @@ fn (mut p PowerManager) poweroff(mut job jobs.ActionJob) ! {
 		return error("Cannot power off node, at least one node should be on in the farm.")
 	}
 
-	p.tfchain.set_node_power(nodeid, .off)!
+	//p.tfchain.set_node_power(nodeid, .off)!
 
 	p.db.nodes[nodeid].powerstate = .shuttingdown
 	p.db.nodes[nodeid].last_time_powerstate_changed = time.now()

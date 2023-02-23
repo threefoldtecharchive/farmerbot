@@ -7,7 +7,7 @@ import utils {
 import freeflowuniverse.baobab.client { Client }
 import freeflowuniverse.crystallib.params { Params }
 import threefoldtech.farmerbot.factory { Farmerbot }
-import threefoldtech.farmerbot.system
+import threefoldtech.farmerbot.system { TfChainRentContract }
 
 // Test finding a node with minimal required resources
 fn test_find_node_required_resources() {
@@ -330,6 +330,31 @@ fn test_find_node_with_public_ips_fails() {
 
 			// assert
 			ensure_error_message(&job, "No more public ips available")!
+		}
+	)!
+}
+
+fn test_find_node_testing_rent_contract() {
+	run_test("test_find_node_testing_rent_contract", 
+		fn (mut farmerbot Farmerbot, mut client Client) ! {
+			// prepare
+			mut args := Params {}
+			farmerbot.db.nodes[3].contracts.rent_contracts << TfChainRentContract { id: 42 }
+			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
+
+			// act
+			mut job := client.job_new_wait(
+				twinid: client.twinid
+				action: system.job_node_find
+				args: args
+				actionsource: ""
+			)or {
+				return error("failed to create and wait for job")
+			}
+
+			// assert
+			ensure_no_error(&job)!
+			ensure_result_contains_u32(&job, "nodeid", 5)!
 		}
 	)!
 }

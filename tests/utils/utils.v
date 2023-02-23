@@ -8,7 +8,7 @@ import freeflowuniverse.crystallib.params { Params }
 
 import threefoldtech.farmerbot.factory { Farmerbot }
 import threefoldtech.farmerbot.manager { PowerManager }
-import threefoldtech.farmerbot.system { Capacity, Node, PowerState, ZosResourcesStatistics }
+import threefoldtech.farmerbot.system { Capacity, Node, PowerState, TfChainContracts, ZosPool, ZosResourcesStatistics }
 
 import math
 import os
@@ -21,8 +21,11 @@ const (
 pub struct TfChainMock {
 }
 pub fn (mut t TfChainMock) set_node_power(node_id u32, state PowerState) ! {
-
 }
+pub fn (mut t TfChainMock) get_contracts_for_twinid(twinid u32) !TfChainContracts {
+	return TfChainContracts {}
+}
+
 
 // TODO add some mock code 
 pub struct ZosMock {
@@ -37,6 +40,9 @@ pub fn (mut z ZosMock) get_zos_system_version(dst u32) !string {
 	return ""
 }
 pub fn (mut z ZosMock) get_zos_wg_ports(dst u32) ![]u16 {
+	return []
+}
+pub fn (mut z ZosMock) get_storage_pools(dst u32) ![]ZosPool {
 	return []
 }
 

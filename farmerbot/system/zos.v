@@ -53,12 +53,21 @@ pub mut:
 	system ZosResources
 }
 
+pub struct ZosPool {
+pub mut:
+    name string
+	pool_type string [json: "type"]
+	size int
+	used int
+}
+
 pub interface IZos {
 mut:
 	zos_has_public_config(dst u32) !bool
 	get_zos_statistics(dst u32) !ZosResourcesStatistics
 	get_zos_system_version(dst u32) !string
 	get_zos_wg_ports(dst u32) ![]u16
+	get_storage_pools(dst u32) ![]ZosPool
 }
 
 pub fn new_zosrmbpeer(redis_address string) !ZosRMBPeer {
@@ -119,6 +128,15 @@ pub fn (mut z ZosRMBPeer) get_zos_wg_ports(dst u32) ![]u16 {
 		return error("${response.err.message}")
 	}
 	return json.decode([]u16, base64.decode_str(response.dat))
+}
+
+pub fn (mut z ZosRMBPeer) get_storage_pools(dst u32) ![]ZosPool {
+	response := z.rmb_client_request("zos.storage.pools", dst)!
+
+	if response.err.message != "" {
+		return error("${response.err.message}")
+	}
+	return json.decode([]ZosPool, base64.decode_str(response.dat))
 }
 
 
@@ -184,4 +202,12 @@ pub fn (mut z ZosRMBGo) get_zos_wg_ports(dst u32) ![]u16 {
 		return error("${response.err}")
 	}
 	return json.decode([]u16, base64.decode_str(response.data))
+}
+
+pub fn (mut z ZosRMBGo) get_storage_pools(dst u32) ![]ZosPool {
+	response := z.rmb_client_request("zos.storage.pools", "", dst)!
+	if response.err != "" {
+		return error("${response.err}")
+	}
+	return []ZosPool {}
 }

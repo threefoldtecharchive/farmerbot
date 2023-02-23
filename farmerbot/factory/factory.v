@@ -10,7 +10,6 @@ import threefoldtech.farmerbot.system
 import threefoldtech.farmerbot.manager
 
 import log
-import math
 import regex
 import time
 

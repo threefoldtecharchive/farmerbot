@@ -100,10 +100,14 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 
 	mut possible_nodes := []&Node
 	for node in n.db.nodes.values() {
+		n.logger.info("${node.id} => ${node.contracts} => ${node.is_unused()}")
 		if certified && !node.certified {
 			continue
 		}
 		if public_config && !node.public_config {
+			continue
+		}
+		if node.has_rent_contract() {
 			continue
 		}
 		if dedicated {
