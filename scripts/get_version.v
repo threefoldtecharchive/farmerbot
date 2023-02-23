@@ -16,16 +16,10 @@ import rand
 import time
 
 fn via_jobs(twinid u32, mut cl client.Client) ! {
-	mut args := params.Params{}
-	args.kwarg_add("required_hru", "500GB")
-	args.kwarg_add("required_sru", "25GB")
-	args.kwarg_add("required_mru", "2GB")
-	args.kwarg_add("required_cru", "2")
-
 	mut job := cl.job_new_wait(
 			twinid: twinid,
-			action: "farmerbot.nodemanager.findnode", 
-			args: args,
+			action: "farmerbot.farmmanager.version", 
+			args: params.Params{},
 			actionsource: "",
 			src_twinid: twinid)!
 	println("Status: ${job.state}")
@@ -34,16 +28,11 @@ fn via_jobs(twinid u32, mut cl client.Client) ! {
 }
 
 fn via_rmb(twinid u32, mut cl client.Client) ! {
-	mut args := params.Params{}
-	args.kwarg_add("required_hru", "500GB")
-	args.kwarg_add("required_sru", "25GB")
-	args.kwarg_add("required_mru", "2GB")
-	args.kwarg_add("required_cru", "2")
 	mut j := jobs.new(
 			twinid: twinid,
-			action: "farmerbot.nodemanager.findnode", 
-			args: args,
-			actionsource: ""
+			action: "farmerbot.farmmanager.version", 
+			args: params.Params{},
+			actionsource: "",
 			src_twinid: twinid)!
 
 	mut redis := redisclient.get("localhost:6379")!

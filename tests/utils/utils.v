@@ -173,6 +173,15 @@ pub fn ensure_node_has_claimed_resources(node &Node, capacity &Capacity) ! {
 	}
 }
 
+pub fn ensure_result_contains_string(job &ActionJob, key string, value string) ! {
+	value_in_job := job.result.get(key) or {
+		return error("Result doesn't contain ${key}: ${job.result}")
+	}
+	if value_in_job != value {
+		return error("Expected result ${key}=${value}, got ${key}=${value_in_job} instead.")
+	}
+}
+
 pub fn ensure_result_contains_u32(job &ActionJob, key string, value u32) ! {
 	value_in_job := job.result.get_u32(key) or {
 		return error("Result doesn't contain ${key}: ${job.result}")

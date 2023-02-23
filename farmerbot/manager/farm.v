@@ -30,6 +30,9 @@ pub fn (mut f FarmManager) init(mut action actions.Action) ! {
 }
 
 pub fn (mut f FarmManager) execute(mut job jobs.ActionJob) ! {
+	if job.action == system.job_farm_version {
+		f.get_version(mut job)!
+	}
 }
 
 pub fn (mut f FarmManager) update() {
@@ -46,4 +49,8 @@ fn (mut f FarmManager) data_set(mut action actions.Action) ! {
 	}
 
 	f.db.farm = farm
+}
+
+fn (mut f FarmManager) get_version(mut job jobs.ActionJob) ! {
+	job.result.kwarg_add("version", system.version)
 }

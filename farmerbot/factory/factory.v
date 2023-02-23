@@ -98,7 +98,7 @@ fn (mut f Farmerbot) init_managers() ! {
 	f.managers["nodemanager"] = node_manager
 	f.managers["powermanager"] = power_manager
 
-	f.actionrunner = actionrunner.new(client.new()!, [node_manager, power_manager])
+	f.actionrunner = actionrunner.new(client.new()!, [farm_manager, node_manager, power_manager])
 }
 
 pub fn (mut f Farmerbot) init() ! {
