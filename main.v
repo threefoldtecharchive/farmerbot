@@ -41,12 +41,13 @@ fn main() {
 		os.mkdir_all(os.dir(output_file), os.MkdirParams{})!
 		os.setenv("FARMERBOT_LOG_OUTPUT", output_file, true)
 	}
-
 	mut f := factory.new(directory, grid3_http_address, redis, network) or {
+		eprintln(err)
 		exit(1)
 	}
 	os.signal_opt(os.Signal.int, f.on_sigint) or {}	
 	f.run() or { 
+		eprintln(err)
 		exit(1)
 	}
 }

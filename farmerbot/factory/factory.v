@@ -124,6 +124,7 @@ pub fn (mut f Farmerbot) run() ! {
 	spawn (&f).update()
 	spawn (&f.actionrunner).run()
 	t := spawn (&f.processor).run()
+	f.logger.info("Farmerbot up and running (version: ${system.version})")
 	t.wait()
 	f.logger.info("Shutdown successful")
 }

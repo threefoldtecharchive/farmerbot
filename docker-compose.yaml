@@ -1,0 +1,42 @@
+services:
+  farmerbot:
+    image: farmerbot
+    networks:
+      - backend-network
+    depends_on:
+      - redis
+    volumes:
+      - ./brandon_farm:/farmerbot
+    command:
+      - -c /farmerbot/ --output /farmerbot/farmerbot.log --debug
+
+  rmbpeer:
+    image: rmb-peer
+    networks:
+       - backend-network
+    depends_on:
+      - redis
+    volumes:
+      - ./brandon_farm:/rmb-peer
+    command: /usr/local/bin/rmb-peer -m "$(cat /rmb-peer/mnemonic.txt)" --relay wss://relay.dev.grid.tf:443 -s wss://tfchain.dev.grid.tf:443 -dd
+    
+
+  #grid3_client:
+    #image: 
+    # TODO!!!
+
+
+  redis:
+    image: redis:7.0.8-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    networks:
+      - backend-network
+    volumes: 
+      - db:/data
+
+volumes:
+  db:
+    driver: local

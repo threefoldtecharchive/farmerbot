@@ -3,6 +3,5 @@ set -ex
 SOURCE=${BASH_SOURCE[0]}
 DIR_OF_THIS_SCRIPT="$( dirname "$SOURCE" )"
 ABS_DIR_OF_SCRIPT="$( realpath $DIR_OF_THIS_SCRIPT )"
-echo $ABS_DIR_OF_SCRIPT
 mkdir -p ~/.vmodules/threefoldtech
 ln -s $ABS_DIR_OF_SCRIPT/farmerbot ~/.vmodules/threefoldtech/farmerbot
