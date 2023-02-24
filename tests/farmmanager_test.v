@@ -6,6 +6,7 @@ import utils {
 import freeflowuniverse.baobab.client { Client }
 import freeflowuniverse.crystallib.params { Params }
 import threefoldtech.farmerbot.factory { Farmerbot }
+import threefoldtech.farmerbot.system
 
 fn test_get_version() {
 	run_test("test_get_version", 

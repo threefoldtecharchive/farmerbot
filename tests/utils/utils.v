@@ -8,7 +8,7 @@ import freeflowuniverse.crystallib.params { Params }
 
 import threefoldtech.farmerbot.factory { Farmerbot }
 import threefoldtech.farmerbot.manager { PowerManager }
-import threefoldtech.farmerbot.system { Capacity, Node, PowerState, TfChainContracts, ZosPool, ZosResourcesStatistics }
+import threefoldtech.farmerbot.system { Capacity, Node, PowerState, ZosPool, ZosResourcesStatistics }
 
 import math
 import os
@@ -22,10 +22,9 @@ pub struct TfChainMock {
 }
 pub fn (mut t TfChainMock) set_node_power(node_id u32, state PowerState) ! {
 }
-pub fn (mut t TfChainMock) get_contracts_for_twinid(twinid u32) !TfChainContracts {
-	return TfChainContracts {}
+pub fn (mut t TfChainMock) 	active_rent_contract_for_node(nodeid u32) !u64 {
+	return 0
 }
-
 
 // TODO add some mock code 
 pub struct ZosMock {
@@ -123,18 +122,9 @@ pub fn run_test(name string, test Test) ! {
 	testenvironment.run(name, test)!
 }
 
-pub fn powermanager_update(mut client Client) ! {
-	_ := client.job_new_wait(
-		twinid: client.twinid,
-		action: system.job_power_periodicwakeup,
-		args: Params {},
-		actionsource: "")!
-
-	_ := client.job_new_wait(
-		twinid: client.twinid,
-		action: system.job_power_powermanagement,
-		args: Params {},
-		actionsource: "")!
+pub fn powermanager_update(mut farmerbot Farmerbot) ! {
+	mut powermanager := farmerbot.get_manager("powermanager")!
+	powermanager.update()
 }
 
 pub fn wait_till_jobs_are_finished(actor string, mut client Client) ! {

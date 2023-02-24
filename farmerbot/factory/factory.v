@@ -9,13 +9,16 @@ import freeflowuniverse.crystallib.pathlib
 import threefoldtech.farmerbot.system
 import threefoldtech.farmerbot.manager
 
+
 import log
+import os { Signal }
 import regex
 import time
 
 [heap]
 pub struct Farmerbot {
 pub mut:
+	running bool
 	path string
 	db &system.DB
 	logger &log.Logger
@@ -26,8 +29,14 @@ pub mut:
 	actionrunner actionrunner.ActionRunner
 }
 
+pub fn (f &Farmerbot) get_manager(name string) !&manager.Manager {
+	return f.managers[name] or {
+		return error("Unknown manager $name")
+	}
+}
+
 fn (mut f Farmerbot) update() {
-	for {
+	for f.running {
 		time_start := time.now()
 		for _, mut manager in f.managers {
 			manager.update()
@@ -51,9 +60,11 @@ pub fn (mut f Farmerbot) init_db() ! {
 			mut parser := actions.file_parse(p.path)!
 			for mut action in parser.actions {
 				name := action.name.split(".")[1]
-				if name in f.managers {
-					f.managers[name].init(mut &action)!
+				mut manager := f.managers[name] or {
+					f.logger.error("Unknown manager ${name}. Skipping this action")
+					continue
 				}
+				manager.init(mut &action)!
 			}
 		}
 	}
@@ -109,11 +120,23 @@ pub fn (mut f Farmerbot) init() ! {
 }
 
 pub fn (mut f Farmerbot) run() ! {
-	t := spawn (&f).update()
+	f.running = true
+	spawn (&f).update()
 	spawn (&f.actionrunner).run()
-	spawn (&f.processor).run()
+	t := spawn (&f.processor).run()
 	t.wait()
-	f.logger.info("Stopping the farmerbot")
+	f.logger.info("Shutdown successful")
+}
+
+pub fn (mut f Farmerbot) shutdown() {
+	f.logger.info("Shutting down")
+	f.actionrunner.running = false
+	f.processor.running = false
+	f.running = false
+}
+
+pub fn (mut f Farmerbot) on_sigint(signal Signal) {
+	f.shutdown()
 }
 
 pub fn new(path string, grid3_http_address string, redis_address string, network string) !&Farmerbot {

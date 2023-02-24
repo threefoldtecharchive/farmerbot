@@ -42,11 +42,10 @@ fn main() {
 		os.setenv("FARMERBOT_LOG_OUTPUT", output_file, true)
 	}
 
-	// TODO add arguments
 	mut f := factory.new(directory, grid3_http_address, redis, network) or {
 		exit(1)
 	}
-	
+	os.signal_opt(os.Signal.int, f.on_sigint) or {}	
 	f.run() or { 
 		exit(1)
 	}

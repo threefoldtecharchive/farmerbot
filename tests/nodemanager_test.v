@@ -7,7 +7,7 @@ import utils {
 import freeflowuniverse.baobab.client { Client }
 import freeflowuniverse.crystallib.params { Params }
 import threefoldtech.farmerbot.factory { Farmerbot }
-import threefoldtech.farmerbot.system { TfChainRentContract }
+import threefoldtech.farmerbot.system 
 
 // Test finding a node with minimal required resources
 fn test_find_node_required_resources() {
@@ -30,7 +30,7 @@ fn test_find_node_required_resources() {
 			// assert
 			ensure_no_error(&job)!
 			ensure_result_contains_u32(&job, "nodeid", 3)!
-			ensure_node_has_claimed_resources(farmerbot.db.nodes[3], capacity_from_args(args)!)!
+			ensure_node_has_claimed_resources(farmerbot.db.get_node(3)!, capacity_from_args(args)!)!
 		}
 	)!
 }
@@ -41,7 +41,7 @@ fn test_find_node_required_resources() {
 	run_test("test_find_node_required_resources_selecting_second_node", 
 		fn (mut farmerbot Farmerbot, mut client Client) ! {
 			// prepare
-			node_id_5_capacity := farmerbot.db.nodes[5].resources.total
+			node_id_5_capacity := farmerbot.db.get_node(5)!.resources.total
 			mut args := Params {}
 			add_required_resources(mut args,
 				node_id_5_capacity.hru.str(),
@@ -62,7 +62,7 @@ fn test_find_node_required_resources() {
 			// assert
 			ensure_no_error(&job)!
 			ensure_result_contains_u32(&job, "nodeid", 5)!
-			ensure_node_has_claimed_resources(farmerbot.db.nodes[5], capacity_from_args(args)!)!
+			ensure_node_has_claimed_resources(farmerbot.db.get_node(5)!, capacity_from_args(args)!)!
 		}
 	)!
 }
@@ -180,7 +180,7 @@ fn test_find_node_that_is_on_first() {
 	run_test("test_find_node_that_is_on_first",
 		fn (mut farmerbot Farmerbot, mut client Client) ! {
 			// prepare
-			farmerbot.db.nodes[3].powerstate = .off
+			farmerbot.db.get_node(3)!.powerstate = .off
 			mut args := Params {}
 			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 
@@ -339,7 +339,7 @@ fn test_find_node_testing_rent_contract() {
 		fn (mut farmerbot Farmerbot, mut client Client) ! {
 			// prepare
 			mut args := Params {}
-			farmerbot.db.nodes[3].contracts.rent_contracts << TfChainRentContract { id: 42 }
+			farmerbot.db.get_node(3)!.has_active_rent_contract = true
 			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 
 			// act

@@ -41,7 +41,7 @@ pub fn (mut d DataManager) update() {
 }
 
 fn (mut d DataManager) ping_node(nodeid u32) bool {
-	mut node := d.db.nodes[nodeid]
+	mut node := d.db.nodes[nodeid] or { return false }
 	_ := d.zos.get_zos_system_version(node.twinid) or {
 		// No response from ZOS node: if the state is waking up we wait for either the node to come up or the
 		// timeout to hit. If the time out hits we change the state to off (AKA unsuccessful wakeup)
@@ -87,7 +87,7 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 }
 
 fn (mut d DataManager) update_node_data(nodeid u32) {
-	mut node := d.db.nodes[nodeid]
+	mut node := d.db.nodes[nodeid] or { return }
 	if node.timeout_claimed_resources <= time.now() {
 		stats := d.zos.get_zos_statistics(node.twinid) or {
 			d.logger.error("${data_manager_prefix} Failed to update statistics of node ${node.id}: $err")
@@ -99,12 +99,12 @@ fn (mut d DataManager) update_node_data(nodeid u32) {
 			return
 		}
 		node.pools = pools
-
-		node.contracts = d.tfchain.get_contracts_for_twinid(node.twinid) or {
+		rent_contract := d.tfchain.active_rent_contract_for_node(node.id) or {
 			d.logger.error("${data_manager_prefix} Failed to update contracts ${node.id}: $err")
 			return
 		}
-		d.logger.debug("${data_manager_prefix} Capacity updated for node ${node.id}:\n${node.resources}\n${node.pools}\n${node.contracts}")
+		node.has_active_rent_contract = rent_contract != 0
+		d.logger.debug("${data_manager_prefix} Capacity updated for node ${node.id}:\n${node.resources}\n${node.pools}\nhas_active_rent_contract: ${node.has_active_rent_contract}")
 	}
 	node.public_config = d.zos.zos_has_public_config(node.twinid) or {
 		d.logger.error("${data_manager_prefix} Failed to update public config of node ${node.id}: $err")

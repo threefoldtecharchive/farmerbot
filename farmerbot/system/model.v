@@ -41,7 +41,7 @@ pub mut:
 	wg_ports []u16
 	resources ConsumableResources
 	pools []ZosPool
-	contracts TfChainContracts
+	has_active_rent_contract bool
 	powerstate PowerState
 	timeout_claimed_resources Time
 	last_time_powerstate_changed Time
@@ -55,15 +55,9 @@ pub fn (mut n Node) update_resources(zos_stats &ZosResourcesStatistics) {
 	n.public_ips_used = zos_stats.used.ipv4u
 }
 
-pub fn (n &Node) has_rent_contract() bool {
-	return n.contracts.rent_contracts.len > 0
-}
-
 pub fn (n &Node) is_unused() bool {
 	return (n.resources.used - n.resources.system).is_empty() 
-			&& n.contracts.name_contracts.len == 0 
-			&& n.contracts.node_contracts.len == 0
-			&& n.contracts.rent_contracts.len == 0
+			&& !n.has_active_rent_contract
 }
 
 pub fn (n &Node) can_claim_resources(cap &Capacity) bool {
@@ -136,4 +130,10 @@ pub mut:
 	periodic_wakeup_end Duration
 	nodes map[u32]&Node
 	farm &Farm
+}
+
+pub fn (d &DB) get_node(nodeid u32) !&Node {
+	return d.nodes[nodeid] or {
+		return error("The farmerbot is not managing the node with id ${nodeid}")
+	}
 }

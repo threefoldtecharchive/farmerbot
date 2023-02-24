@@ -3,10 +3,15 @@ We highly recommend to write proper tests that cover most of the code in this re
 
 ## Running the existing tests
 The tests have to be run before landing any PR. You can run the existing tests by running the command below:
-> v -stats test tests/nodemanager_test.v
-> v -stats test tests/powermanager_test.v
+> bash tests/run_tests.v
 
-V supports running multiple test files at once but unfortunately we cannot use it as the redis usage is meant to be single threaded.
+Or if you wish to run the tests for a specific manager:
+> v -stats test tests/nodemanager_test.v
+
+You can also filter the tests like so:
+> v -stats test tests/nodemanager_test.v -run-only \<PATTERN\>
+
+V supports running tests in parallel (running multiple test files in parallel actually) but unfortunately we cannot use it as the redis usage is meant to be single threaded.
 
 ## Good practices for writing tests
 It is a good practice to structure a test in 3 parts: prepare, act and assert.
