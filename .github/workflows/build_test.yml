@@ -24,6 +24,7 @@ jobs:
           cd ../ && git clone -b development_38 https://github.com/freeflowuniverse/crystallib.git
           cd crystallib && bash install.sh
           cd ../
+          /etc/init.d/redis-server start
 
       - name: Build
         run: |
