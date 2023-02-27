@@ -2,8 +2,8 @@ name: Build and Test
 
 on: 
   push:
-    branches:
-      - development
+    #branches:
+    #  - development
   pull_request:
   workflow_dispatch:
   
