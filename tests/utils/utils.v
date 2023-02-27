@@ -66,15 +66,16 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 	
 	t.tfchain_mock = &TfChainMock {}
 	t.zos_mock = &ZosMock {}
+	mut logger := system.logger()
 	mut f := &Farmerbot {
 		path: testpath
 		db: &system.DB {
 			farm: &system.Farm {}
 		}
-		logger: system.logger()
+		logger: logger
 		tfchain: t.tfchain_mock
 		zos: t.zos_mock
-		processor: processor.Processor {}
+		processor: processor.new(logger)
 		actionrunner: actionrunner.ActionRunner {
 			client: &Client {}
 		}
