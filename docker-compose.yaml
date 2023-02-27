@@ -1,29 +1,37 @@
 services:
   farmerbot:
-    image: farmerbot
+    image: ghcr.io/threefoldtech/farmerbot:0.1.0-rc2
     networks:
       - backend-network
     depends_on:
       - redis
     volumes:
       - ./brandon_farm:/farmerbot
-    command:
-      - -c /farmerbot/ --output /farmerbot/farmerbot.log --debug
+    command: -c /farmerbot/ --output /farmerbot/farmerbot.log --debug
 
   rmbpeer:
-    image: rmb-peer
+    image: ghcr.io/threefoldtech/rmb-peer:latest
     networks:
        - backend-network
     depends_on:
       - redis
+    ports:
+      - '80:80'
+      - '443:443'
     volumes:
       - ./brandon_farm:/rmb-peer
-    command: /usr/local/bin/rmb-peer -m "$(cat /rmb-peer/mnemonic.txt)" --relay wss://relay.dev.grid.tf:443 -s wss://tfchain.dev.grid.tf:443 -dd
+    command: -m "$(cat /rmb-peer/mnemonic.txt)" --relay wss://relay.dev.grid.tf:443 -s wss://tfchain.dev.grid.tf:443 -dd
     
 
-  #grid3_client:
-    #image: 
-    # TODO!!!
+  grid3_client:
+    image: grid3_client
+    networks:
+       - backend-network
+    volumes:
+      - ./brandon_farm:/grid3_client
+    command: httpserver -c /grid3_client/http-server-config.json
+    ports:
+      - '3000:3000'
 
 
   redis:
