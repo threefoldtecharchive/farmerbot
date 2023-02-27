@@ -4,15 +4,17 @@ on:
     branches:
       - development
   pull_request:
+
 jobs:
   build-and-test:
-    runs-on: [self-hosted, tfchainrunner01]
+    runs-on: ubuntu-22.04
     container:
-      image: thevlang/vlang:latest
+      image: threefolddev/farmerbot:0
 
     steps:
       - uses: actions/checkout@v3
 
+      # TODO release the dependencies mentioned below!
       - name: Istall dependencies
         run: |
           cd ../ && git clone -b development_actor https://github.com/freeflowuniverse/baobab.git
