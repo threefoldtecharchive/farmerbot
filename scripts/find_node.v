@@ -39,6 +39,8 @@ fn via_rmb(twinid u32, mut cl client.Client) ! {
 	args.kwarg_add("required_sru", "25GB")
 	args.kwarg_add("required_mru", "2GB")
 	args.kwarg_add("required_cru", "2")
+	//args.kwarg_add("node_exclude", "[77]")
+	args.kwarg_add("dedicated", "false")
 	mut j := jobs.new(
 			twinid: twinid,
 			action: "farmerbot.nodemanager.findnode", 
@@ -46,7 +48,7 @@ fn via_rmb(twinid u32, mut cl client.Client) ! {
 			actionsource: ""
 			src_twinid: twinid)!
 
-	mut redis := redisclient.get("localhost:6379")!
+	mut redis := redisclient.get("localhost:6379")!	
 	mut msg := system.RmbMessage {
 			ver: 1
 			cmd: "msgbus.execute_job"
