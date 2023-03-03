@@ -23,7 +23,8 @@ pub mut:
 }
 
 pub struct RmbError {
-    code u32
+pub mut:
+    code int
 	message string
 }
 
@@ -34,6 +35,7 @@ pub mut:
 	dat string
 	dst string
 	now u64
+	shm string
 	err RmbError
 }
 

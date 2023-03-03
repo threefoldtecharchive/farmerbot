@@ -48,9 +48,12 @@ fn via_rmb(twinid u32, mut cl client.Client) ! {
 			now: u64(time.now().unix_time())
 	}
 	request := json.encode_pretty(msg)
+	println("${j.json_dump()}")
+	println("${base64.encode_str(j.json_dump())}")
 	redis.lpush('msgbus.execute_job', request)!
 	response_json := redis.blpop(msg.ret, int(msg.exp))!
 	response := json.decode(system.RmbResponse, response_json)!
+	assert response.err.message == ""
 	job_response := jobs.json_load(base64.decode_str(response.dat))!
 	println("Status: ${job_response.state}")
 	println("Err: ${job_response.error}")
