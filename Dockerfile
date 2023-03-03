@@ -6,7 +6,6 @@ WORKDIR /baobab
 RUN git clone -b development_actor https://github.com/freeflowuniverse/baobab.git .
 RUN bash install.sh
 
-
 WORKDIR /crystallib
 RUN git clone -b development_38 https://github.com/freeflowuniverse/crystallib.git .
 RUN bash install.sh
@@ -14,7 +13,7 @@ RUN bash install.sh
 WORKDIR /farmerbot
 COPY . .
 RUN bash install.sh
-RUN v main.v
+RUN v -prod main.v
 
 # ===== SECOND STAGE ======
 
