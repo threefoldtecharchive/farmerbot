@@ -29,6 +29,10 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=semver,pattern={{version}}
+
+      - name: Echo
+        run: echo Building and pushing farmerbot ${{ steps.meta.outputs.image.version }}
+        
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
