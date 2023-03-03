@@ -9,11 +9,14 @@ on:
   
 jobs:
   build-and-test:
-    runs-on: ubuntu-22.04
-    container:
-      image: threefolddev/farmerbot:0
+    runs-on: ubuntu-latest
 
     steps:
+      - name: Setup Vlang
+        uses: vlang/setup-v@v1.3
+        with:
+          check-latest: true
+
       - uses: actions/checkout@v3
 
       # TODO release the dependencies mentioned below!
@@ -29,7 +32,7 @@ jobs:
       - name: Build
         run: |
           bash install.sh
-          v main.v
+          v -prod main.v
 
       - name: Unit tests
         run: |
