@@ -9,15 +9,25 @@ on:
   
 jobs:
   build-and-test:
-    runs-on: ubuntu-22.04
-    container:
-      image: threefolddev/farmerbot:0
+    runs-on: ubuntu-latest
+    # container:
+    #   image: threefolddev/farmerbot:0
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: sudo apt install -y libgc-dev tmux mc git rsync curl
 
-      - name: Update Vlang
-        run: v up
+      - name: Setup Vlang
+        uses: vlang/setup-v@v1
+        with:
+          check-latest: true
+      
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.5.0
+        with:
+          redis-version: 7.0.8
+
+      - uses: actions/checkout@v3
 
       # TODO release the dependencies mentioned below!
       - name: Istall dependencies
