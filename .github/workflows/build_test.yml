@@ -16,10 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Setup Vlang
-        uses: vlang/setup-v@v1
-        with:
-          check-latest: true
+      - name: Update Vlang
+        run: v up
 
       # TODO release the dependencies mentioned below!
       - name: Istall dependencies
