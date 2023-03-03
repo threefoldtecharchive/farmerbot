@@ -25,7 +25,7 @@ mut:
 [heap]
 pub struct TfChain {
 pub mut:
-	address string = "http://localhost:3000"
+	address string = "http://127.0.0.1:3000"
 }
 
 pub fn (mut t TfChain) set_node_power(node_id u32, state PowerState) ! {
@@ -41,7 +41,7 @@ pub fn (mut t TfChain) set_node_power(node_id u32, state PowerState) ! {
 		}
 	}
 	response := http_client.send("nodes.setNodePower", json.encode(args)) or {
-		return error("Failed to send ")
+		return error("Failed to send: $err")
 	}
 	if response.err != "" {
 		return error("${response.err}")

@@ -13,7 +13,7 @@ RUN bash install.sh
 WORKDIR /farmerbot
 COPY . .
 RUN bash install.sh
-RUN v -prod main.v
+RUN v main.v
 
 # ===== SECOND STAGE ======
 
