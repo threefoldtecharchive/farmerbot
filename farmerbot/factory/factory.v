@@ -60,11 +60,11 @@ pub fn (mut f Farmerbot) init_db() ! {
 			mut parser := actions.file_parse(p.path)!
 			for mut action in parser.actions {
 				name := action.name.split(".")[1]
-				mut manager := f.managers[name] or {
+				mut m := f.managers[name] or {
 					f.logger.error("Unknown manager ${name}. Skipping this action")
 					continue
 				}
-				manager.init(mut &action)!
+				m.init(mut &action)!
 			}
 		}
 	}

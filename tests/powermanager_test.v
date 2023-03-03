@@ -14,15 +14,15 @@ import time
 // Test power off a node that is ON
 fn test_poweroff_node() {
 	run_test("test_poweroff_node", 
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			farmerbot.db.get_node(3)!.powerstate = .on
 			mut args := Params {}
 			args.kwarg_add("nodeid", "3")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_power_off
 				args: args
 				actionsource: ""
@@ -40,15 +40,15 @@ fn test_poweroff_node() {
 // Test power off a node that is in shutdown state
 fn test_poweroff_node_that_is_shutting_down() {
 	run_test("test_poweroff_node_that_is_shutting_down",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			farmerbot.db.get_node(3)!.powerstate = .shuttingdown
 			mut args := Params {}
 			args.kwarg_add("nodeid", "3")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_power_off
 				args: args
 				actionsource: ""
@@ -66,15 +66,15 @@ fn test_poweroff_node_that_is_shutting_down() {
 // Test power off a node that is already off
 fn test_poweroff_node_that_is_off() {
 	run_test("test_poweroff_node_that_is_off",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			farmerbot.db.get_node(3)!.powerstate = .off
 			mut args := Params {}
 			args.kwarg_add("nodeid", "3")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_power_off
 				args: args
 				actionsource: ""
@@ -92,15 +92,15 @@ fn test_poweroff_node_that_is_off() {
 // Test power off a node that is waking up
 fn test_poweroff_node_that_is_wakingup() {
 	run_test("test_poweroff_node_that_is_wakingup_fails",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			farmerbot.db.get_node(3)!.powerstate = .wakingup
 			mut args := Params {}
 			args.kwarg_add("nodeid", "3")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_power_off
 				args: args
 				actionsource: ""
@@ -118,7 +118,7 @@ fn test_poweroff_node_that_is_wakingup() {
 // Test power off the last node online in the farm, it should fail 
 fn test_poweroff_node_one_should_stay_on_fails() {
 	run_test("test_poweroff_node_one_should_stay_on_fails",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			for mut node in farmerbot.db.nodes.values() {
 				node.powerstate = .off
@@ -128,8 +128,8 @@ fn test_poweroff_node_one_should_stay_on_fails() {
 			args.kwarg_add("nodeid", "3")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_power_off
 				args: args
 				actionsource: ""
@@ -147,15 +147,15 @@ fn test_poweroff_node_one_should_stay_on_fails() {
 // Test powering on a node that is offline
 fn test_poweron_node() {
 	run_test("test_poweron_node", 
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			farmerbot.db.get_node(3)!.powerstate = .off
 			mut args := Params {}
 			args.kwarg_add("nodeid", "3")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_power_on
 				args: args
 				actionsource: ""
@@ -173,15 +173,15 @@ fn test_poweron_node() {
 // Test powering on a node that is in shutdown state
 fn test_poweron_node_that_is_shutting_down() {
 	run_test("test_poweron_node_that_is_shutting_down_fails", 
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			farmerbot.db.get_node(3)!.powerstate = .shuttingdown
 			mut args := Params {}
 			args.kwarg_add("nodeid", "3")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_power_on
 				args: args
 				actionsource: ""
@@ -199,15 +199,15 @@ fn test_poweron_node_that_is_shutting_down() {
 // Test powering on a node that is waking up
 fn test_poweron_node_that_is_waking_up() {
 	run_test("test_poweron_node_that_is_waking_up", 
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			farmerbot.db.get_node(3)!.powerstate = .wakingup
 			mut args := Params {}
 			args.kwarg_add("nodeid", "3")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_power_on
 				args: args
 				actionsource: ""
@@ -225,15 +225,15 @@ fn test_poweron_node_that_is_waking_up() {
 // Test powering on a node that is already online
 fn test_poweron_node_that_is_on() {
 	run_test("test_poweron_node_that_is_on", 
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 		farmerbot.db.get_node(3)!.powerstate = .on
 			mut args := Params {}
 			args.kwarg_add("nodeid", "3")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_power_on
 				args: args
 				actionsource: ""
@@ -252,7 +252,7 @@ fn test_poweron_node_that_is_on() {
 // (> wake_up_threshold). It should power on a new node
 fn test_power_management_resource_usage_too_high() {
 	run_test("test_power_management_resource_usage_too_high",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			farmerbot.db.wake_up_threshold = 80
 			for mut node in farmerbot.db.nodes.values() {
@@ -278,7 +278,7 @@ fn test_power_management_resource_usage_too_high() {
 // Test power management: when the usage is perfect do nothing
 fn test_power_management_resource_usage_is_perfect() {
 	run_test("test_power_management_resource_usage_is_perfect",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			farmerbot.db.wake_up_threshold = 80
 			for mut node in farmerbot.db.nodes.values() {
@@ -305,7 +305,7 @@ fn test_power_management_resource_usage_is_perfect() {
 // a node (at least two empty)
 fn test_power_management_resource_usage_too_low() {
 	run_test("test_power_management_resource_usage_too_low",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			farmerbot.db.wake_up_threshold = 80
 			for mut node in farmerbot.db.nodes.values() {
@@ -332,7 +332,7 @@ fn test_power_management_resource_usage_too_low() {
 // empty node on
 fn test_power_management_resource_usage_too_low_keep_at_least_one_empty_node_on() {
 	run_test("test_power_management_resource_usage_too_low_keep_at_least_one_empty_node_on",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			farmerbot.db.wake_up_threshold = 80
 			for mut node in farmerbot.db.nodes.values() {
@@ -357,7 +357,7 @@ fn test_power_management_resource_usage_too_low_keep_at_least_one_empty_node_on(
 // we can't shutdown any nodes as they are all being used.
 fn test_power_management_resource_usage_too_low_no_nodes_to_bring_down() {
 	run_test("test_power_management_resource_usage_too_low_no_nodes_to_bring_down",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			farmerbot.db.wake_up_threshold = 80
 			for mut node in farmerbot.db.nodes.values() {
@@ -388,7 +388,7 @@ fn test_power_management_resource_usage_too_low_no_nodes_to_bring_down() {
 // Test power management: periodic wakeup
 fn test_power_management_periodic_wakeup() {
 	run_test("test_power_management_periodic_wakeup",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			now := time.now()
 			farmerbot.db.periodic_wakeup_start = time.hour * now.hour

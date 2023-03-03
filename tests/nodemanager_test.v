@@ -12,14 +12,14 @@ import threefoldtech.farmerbot.system
 // Test finding a node with minimal required resources
 fn test_find_node_required_resources() {
 	run_test("test_find_node_required_resources", 
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare 
 			mut args := Params {}
 			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args
 				actionsource: ""
@@ -39,7 +39,7 @@ fn test_find_node_required_resources() {
 //   The required resources is more then what the first node can handle
  fn test_find_node_required_resources_selecting_second_node() {
 	run_test("test_find_node_required_resources_selecting_second_node", 
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			node_id_5_capacity := farmerbot.db.get_node(5)!.resources.total
 			mut args := Params {}
@@ -50,8 +50,8 @@ fn test_find_node_required_resources() {
 				node_id_5_capacity.cru.str())
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args
 				actionsource: ""
@@ -70,15 +70,15 @@ fn test_find_node_required_resources() {
 // Test finding a node that has a public_config
 fn test_find_node_with_public_config() {
 	run_test("test_find_node_with_public_config", 
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			mut args := Params {}
 			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 			args.kwarg_add("public_config", "1")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args
 				actionsource: ""
@@ -96,15 +96,15 @@ fn test_find_node_with_public_config() {
 // Test finding a node with minimum amount of resources and renting the full node (it should not be used)
 fn test_find_node_dedicated() {
 	run_test("test_find_node_dedicated", 
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			mut args := Params {}
 			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 			args.kwarg_add("dedicated", "1")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args
 				actionsource: ""
@@ -123,15 +123,15 @@ fn test_find_node_dedicated() {
 // The required resources will fit on any node but we exclude node 3 and 5
 fn test_find_node_excluding_nodes() {
 	run_test("test_find_node_excluding_nodes",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			mut args := Params {}
 			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 			args.kwarg_add("node_exclude", "3, 5")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args
 				actionsource: ""
@@ -151,15 +151,15 @@ fn test_find_node_excluding_nodes() {
 // not asking for dedicated node nor asking for al resources
  fn test_find_node_certified() {
 	run_test("test_find_node_certified",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			mut args := Params {}
 			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 			args.kwarg_add("certified", "true")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args
 				actionsource: ""
@@ -178,15 +178,15 @@ fn test_find_node_excluding_nodes() {
 // Required resources can fit on node with id 3 but it is offline so it should be 5
 fn test_find_node_that_is_on_first() {
 	run_test("test_find_node_that_is_on_first",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			farmerbot.db.get_node(3)!.powerstate = .off
 			mut args := Params {}
 			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args
 				actionsource: ""
@@ -204,7 +204,7 @@ fn test_find_node_that_is_on_first() {
 // Test finding a node: testing a bit of everything together
 fn test_find_node_with_everything() {
 	run_test("test_find_node_with_everything",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			mut args := Params {}
 			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
@@ -214,8 +214,8 @@ fn test_find_node_with_everything() {
 			args.kwarg_add("node_exclude", "3, 5")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args
 				actionsource: ""
@@ -235,7 +235,7 @@ fn test_find_node_with_everything() {
 // first two jobs should be able to fit onto node 3 (with overprovisioning)
 fn test_overprovisioning_cpu() {
 	run_test("test_overprovisioning_cpu", 
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			mut args_a := Params {}
 			add_required_resources(mut args_a, "100GB", "100GB", "4GB", "8")
@@ -245,24 +245,24 @@ fn test_overprovisioning_cpu() {
 			add_required_resources(mut args_c, "100GB", "100GB", "4GB", "4")
 
 			// act
-			mut job_a := client.job_new_wait(
-				twinid: client.twinid
+			mut job_a := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args_a
 				actionsource: ""
 			) or {
 				return error("failed to create and wait for job")
 			}
-			mut job_b := client.job_new_wait(
-				twinid: client.twinid
+			mut job_b := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args_b
 				actionsource: ""
 			) or {
 				return error("failed to create and wait for job")
 			}
-			mut job_c := client.job_new_wait(
-				twinid: client.twinid
+			mut job_c := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args_c
 				actionsource: ""
@@ -285,15 +285,15 @@ fn test_overprovisioning_cpu() {
 // Farm has 2 public ips available so this job should succeed
 fn test_find_node_with_public_ips() {
 	run_test("test_find_node_with_public_ips",
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			mut args := Params {}
 			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 			args.kwarg_add("public_ips", "2")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args
 				actionsource: ""
@@ -312,15 +312,15 @@ fn test_find_node_with_public_ips() {
 // Farm has 2 public ips available so this job should fail
 fn test_find_node_with_public_ips_fails() {
 	run_test("test_find_node_with_public_ips_fails", 
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			mut args := Params {}
 			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 			args.kwarg_add("public_ips", "3")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args
 				actionsource: ""
@@ -336,15 +336,15 @@ fn test_find_node_with_public_ips_fails() {
 
 fn test_find_node_testing_rent_contract() {
 	run_test("test_find_node_testing_rent_contract", 
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			mut args := Params {}
 			farmerbot.db.get_node(3)!.has_active_rent_contract = true
 			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_node_find
 				args: args
 				actionsource: ""

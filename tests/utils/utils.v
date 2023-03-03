@@ -55,7 +55,7 @@ pub mut:
 }
 
 pub fn (mut t TestEnvironment) run(name string, test Test) ! {
-	mut client := client.new() or { 
+	mut c := client.new() or { 
 		return error("Failed creating client: $err")
 	}
 
@@ -100,11 +100,11 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 	t_ar := spawn (&f.actionrunner).run()
 	t_pr := spawn (&f.processor).run()
 
-	client.reset() or {
+	c.reset() or {
 		return error("Failed resetting client: $err")
 	}
 
-	test(mut f, mut client) or {
+	test(mut f, mut c) or {
 		f.processor.running = false
 		f.actionrunner.running = false
 		t_ar.wait()
@@ -128,8 +128,8 @@ pub fn powermanager_update(mut farmerbot Farmerbot) ! {
 	powermanager.update()
 }
 
-pub fn wait_till_jobs_are_finished(actor string, mut client Client) ! {
- 	for client.check_remaining_jobs(actor)! > 0 {
+pub fn wait_till_jobs_are_finished(actor string, mut c Client) ! {
+ 	for c.check_remaining_jobs(actor)! > 0 {
 	}
 }
 

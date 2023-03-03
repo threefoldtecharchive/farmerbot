@@ -10,11 +10,11 @@ import threefoldtech.farmerbot.system
 
 fn test_get_version() {
 	run_test("test_get_version", 
-		fn (mut farmerbot Farmerbot, mut client Client) ! {
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
 			// act
-			mut job := client.job_new_wait(
-				twinid: client.twinid
+			mut job := c.job_new_wait(
+				twinid: c.twinid
 				action: system.job_farm_version
 				args: Params {}
 				actionsource: ""
