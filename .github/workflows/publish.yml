@@ -31,7 +31,7 @@ jobs:
             type=semver,pattern={{version}}
 
       - name: Echo
-        run: echo Building and pushing farmerbot ${{ steps.meta.outputs.labels.org.opencontainers.image.version }}
+        run: echo ${DOCKER_METADATA_OUTPUT_VERSION}
 
       # - name: Build and push Docker image
       #   uses: docker/build-push-action@v3
