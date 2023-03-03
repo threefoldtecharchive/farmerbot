@@ -33,10 +33,10 @@ jobs:
       - name: Echo
         run: echo Building and pushing farmerbot ${{ steps.meta.outputs.labels['org.opencontainers.image.version'] }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v3
-        with:
-          push: true
-          context: .
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+      # - name: Build and push Docker image
+      #   uses: docker/build-push-action@v3
+      #   with:
+      #     push: true
+      #     context: .
+      #     tags: ${{ steps.meta.outputs.tags }}
+      #     labels: ${{ steps.meta.outputs.labels }}
