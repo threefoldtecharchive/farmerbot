@@ -68,6 +68,7 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 	t.zos_mock = &ZosMock {}
 	mut logger := system.logger()
 	mut f := &Farmerbot {
+		redis_address: "localhost:6379"
 		path: testpath
 		db: &system.DB {
 			farm: &system.Farm {}
