@@ -1,6 +1,6 @@
 services:
   farmerbot:
-    image: test:latest #ghcr.io/threefoldtech/farmerbot:0.1.0-rc3
+    image: ghcr.io/threefoldtech/farmerbot:0.1.0-rc4
     depends_on:
       redis:
         condition: service_healthy
@@ -10,7 +10,7 @@ services:
         condition: service_healthy
     volumes:
       - /work/farmerbot/_brandon_farm:/farmerbot
-    command: -c /farmerbot/ --grid3 "http://grid3_client:3000" --redis "redis:6379" --debug #--output /farmerbot/farmerbot.log
+    command: -c /farmerbot/ --grid3 "http://grid3_client:3000" --redis "redis:6379" --debug
 
   rmbpeer:
     image: ghcr.io/threefoldtech/rmb-peer:latest
@@ -20,7 +20,6 @@ services:
     volumes:
       - /work/farmerbot/_rmb_peer:/rmbpeer
     entrypoint: /bin/sh -c
-    #network_mode: host
     command: ["/usr/sbin/rmb-peer --redis redis://redis:6379 --mnemonics \"$(cat /rmbpeer/mnemonic.txt)\" --relay wss://relay.dev.grid.tf:443 -s wss://tfchain.dev.grid.tf:443 -d"]
 
   grid3_client:
@@ -43,8 +42,6 @@ services:
     image: redis:7.0.8-alpine
     restart: always
     ports:
-      - '6379'
-    expose:
       - '6379'
     command: --save 20 1
     volumes: 
