@@ -15,27 +15,13 @@ import os
 import rand
 import time
 
-fn via_jobs(twinid u32, mut cl client.Client) ! {
-	mut job := cl.job_new_wait(
-			twinid: twinid,
-			action: "farmerbot.farmmanager.version", 
-			args: params.Params{},
-			actionsource: "",
-			src_twinid: twinid)!
-	println("Status: ${job.state}")
-	println("Err: ${job.error}")
-	println("Response: ${job.result}")
-}
-
-fn via_rmb(twinid u32, mut cl client.Client) ! {
+fn get_version(mut redis redisclient.Redis, twinid u32, mut cl client.Client) ! {
 	mut j := jobs.new(
 			twinid: twinid,
 			action: "farmerbot.farmmanager.version", 
 			args: params.Params{},
 			actionsource: "",
 			src_twinid: twinid)!
-
-	mut redis := redisclient.get("localhost:6379")!
 	mut msg := system.RmbMessage {
 			ver: 1
 			cmd: "msgbus.execute_job"
@@ -66,21 +52,18 @@ pub fn main() {
 	fp.limit_free_args(0, 0)!
 	fp.description('')
 	fp.skip_executable()
+	redis_address := fp.string('redis', 0, "localhost:6379", "the address of the redis database")
 	twinid := fp.int('twinid', 0, 0, 'your twinid')
-	viarmb := fp.bool('rmb', 0, true, 'send the job via RMB or immediately to the farmerbots job queue')
 	_ := fp.finalize() or {
 		eprintln(err)
 		println(fp.usage())
 		return
 	}
-	mut cl := client.new() or { panic("$err") }
-	if viarmb {
-		via_rmb(u32(twinid), mut cl) or {
-			eprintln(err)
-		}
-	} else {
-		via_jobs(u32(twinid), mut cl) or {
-			eprintln(err)
-		}
+	mut cl := client.new(redis_address) or { panic("$err") }
+	mut redis := redisclient.get(redis_address) or {
+		panic("$err")
+	}
+	get_version(mut redis, u32(twinid), mut cl) or {
+		eprintln(err)
 	}
 }

@@ -14,11 +14,9 @@ import os
 import rand
 import time
 
-fn unauthorized(twinid u32, mut cl client.Client) ! {
+fn unauthorized(mut redis redisclient.Redis, twinid u32, mut cl client.Client) ! {
 	a_wrong_source_twin_id := twinid + 5
 	mut wrong_payload := '{"guid":"0eb2d6d6-73ef-4273-a80c-ab1289d2d0d6","twinid":${twinid},"action":"farmerbot.farmmanager.version","args":{"params":[],"args":[]},"result":{"params":[],"args":[]},"state":"init","start":1677842854,"end":0,"grace_period":0,"error":"","timeout":0,"src_twinid":${a_wrong_source_twin_id},"src_action":"","dependencies":[]}'
-
-	mut redis := redisclient.get("localhost:6379")!	
 	mut msg := system.RmbMessage {
 			ver: 1
 			cmd: "msgbus.execute_job"
@@ -39,10 +37,8 @@ fn unauthorized(twinid u32, mut cl client.Client) ! {
 	assert response.err.message == error_code_to_message(RMBErrorCode.unauthorized)
 }
 
-fn wrong_json_job(twinid u32, mut cl client.Client) ! {
+fn wrong_json_job(mut redis redisclient.Redis, twinid u32, mut cl client.Client) ! {
 	mut wrong_payload := '"guid":"0eb2d6d6-73ef-4273-a80c-ab1289d2d0d6","twinid":0,"action":"farmerbot.farmmanager.version","args":{"params":[],"args":[]},"result":{"params":[],"args":[]},"state":"init","start":1677842854,"end":0,"grace_period":0,"error":"","timeout":0,"src_twinid":0,"src_action":"","dependencies":[]}'
-
-	mut redis := redisclient.get("localhost:6379")!	
 	mut msg := system.RmbMessage {
 			ver: 1
 			cmd: "msgbus.execute_job"
@@ -70,16 +66,19 @@ pub fn main() {
 	fp.description('')
 	fp.skip_executable()
 	twinid := fp.int('twinid', 0, 0, 'your twinid')
+	redis_address := fp.string('redis', 0, "localhost:6379", "the address of the redis database")
+
 	_ := fp.finalize() or {
 		eprintln(err)
 		println(fp.usage())
 		return
 	}
-	mut cl := client.new() or { panic("$err") }
-	wrong_json_job(u32(twinid), mut cl) or {
+	mut redis := redisclient.get(redis_address) or { panic("$err") }
+	mut cl := client.new(redis_address) or { panic("$err") }
+	wrong_json_job(mut redis, u32(twinid), mut cl) or {
 		eprintln(err)
 	}
-	unauthorized(u32(twinid), mut cl) or {
+	unauthorized(mut redis, u32(twinid), mut cl) or {
 		eprintln(err)
 	}
 }

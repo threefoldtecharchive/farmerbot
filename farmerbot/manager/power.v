@@ -112,7 +112,7 @@ fn (mut p PowerManager) power_management() {
  				resource_usage = 100 * new_used_resources / new_total_resources
  				if resource_usage < p.db.wake_up_threshold {
  					// we need to keep the resource percentage lower then the threshold
- 					p.logger.info("${power_manager_prefix} Resource usage too low: ${resource_usage}. Turning of unused node ${node.id}")
+ 					p.logger.info("${power_manager_prefix} Resource usage too low: ${resource_usage}. Turning off unused node ${node.id}")
  					p.schedule_power_job(node.id, .off) or {
  						p.logger.error("${power_manager_prefix} Job to power off node ${node.id} failed: $err")
  					}

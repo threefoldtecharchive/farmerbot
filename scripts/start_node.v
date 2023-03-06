@@ -25,7 +25,7 @@ pub fn main() {
 		eprintln("You should choose on or off not both!")
 		return
 	}
-	mut cl := client.new() or { panic("$err") }
+	mut cl := client.new("localhost:6379") or { panic("$err") }
 	mut args := params.Params{}
 	args.kwarg_add("nodeid", "${nodeid}")
 	action := if on {
