@@ -55,7 +55,7 @@ pub mut:
 }
 
 pub fn (mut t TestEnvironment) run(name string, test Test) ! {
-	mut c := client.new() or { 
+	mut c := client.new("localhost:6379") or { 
 		return error("Failed creating client: $err")
 	}
 
@@ -75,7 +75,7 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 		logger: logger
 		tfchain: t.tfchain_mock
 		zos: t.zos_mock
-		processor: processor.new(logger)
+		processor: processor.new("localhost:6379", logger)!
 		actionrunner: actionrunner.ActionRunner {
 			client: &Client {}
 		}
