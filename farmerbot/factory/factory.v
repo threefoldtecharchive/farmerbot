@@ -17,6 +17,8 @@ import time
 
 [heap]
 pub struct Farmerbot {
+pub:
+	redis_address string
 pub mut:
 	running bool
 	path string
@@ -75,28 +77,28 @@ fn (mut f Farmerbot) init_managers() ! {
 	f.logger.info("Initializing managers")
 	f.managers = map[string]&manager.Manager{}
 	mut data_manager := &manager.DataManager {
-		client: client.new()!
+		client: client.new(f.redis_address)!
 		db: f.db
 		logger: f.logger
 		tfchain: f.tfchain
 		zos: f.zos
 	}
 	mut farm_manager := &manager.FarmManager {
-		client: client.new()!
+		client: client.new(f.redis_address)!
 		db: f.db 
 		logger: f.logger
 		tfchain: f.tfchain
 		zos: f.zos
 	}
 	mut node_manager := &manager.NodeManager {
-		client: client.new()!
+		client: client.new(f.redis_address)!
 		db: f.db 
 		logger: f.logger
 		tfchain: f.tfchain
 		zos: f.zos
 	}
 	mut power_manager := &manager.PowerManager {
-		client: client.new()!
+		client: client.new(f.redis_address)!
 		db: f.db
 		logger: f.logger
 		tfchain: f.tfchain
@@ -109,7 +111,7 @@ fn (mut f Farmerbot) init_managers() ! {
 	f.managers["nodemanager"] = node_manager
 	f.managers["powermanager"] = power_manager
 
-	f.actionrunner = actionrunner.new(client.new()!, [farm_manager, node_manager, power_manager])
+	f.actionrunner = actionrunner.new(client.new(f.redis_address)!, [farm_manager, node_manager, power_manager])
 }
 
 pub fn (mut f Farmerbot) init() ! {
@@ -143,6 +145,7 @@ pub fn (mut f Farmerbot) on_sigint(signal Signal) {
 pub fn new(path string, grid3_http_address string, redis_address string, network string) !&Farmerbot {
 	mut logger := system.logger()
 	mut f := &Farmerbot {
+		redis_address: redis_address
 		path: path
 		db: &system.DB {
 			farm: &system.Farm {}
@@ -156,7 +159,7 @@ pub fn new(path string, grid3_http_address string, redis_address string, network
 				&system.IZos(system.new_zosrmbgo(redis_address)!)
 			}
 		logger: logger
-		processor: processor.new(logger)
+		processor: processor.new(redis_address, logger)!
 		actionrunner: actionrunner.ActionRunner {
 			client: &client.Client {}
 		}
