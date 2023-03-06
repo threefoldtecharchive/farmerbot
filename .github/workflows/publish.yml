@@ -38,4 +38,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            GRID3_CLIENT_VERSION=$DOCKER_METADATA_OUTPUT_JSON
+            GRID3_CLIENT_VERSION=${{ steps.meta.outputs.version }}
