@@ -4,12 +4,12 @@
 
 example node definition, description is optional
 
-!!farmer.powermanager.model.powermanager
+!!powermanager.define
     name:'wol'
     devicetype:'wol'
     description:'is the default wake on lan implementation'
 
-!!farmer.powermanager.model.powermanager
+!!powermanager.define
     name:'pwr1'
     devicetype:'racktivity'
     description:'is power manager as racktivity'

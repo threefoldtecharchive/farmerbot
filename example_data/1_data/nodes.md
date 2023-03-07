@@ -4,7 +4,7 @@
 
 example node definition, description is optional
 
-!!farmerbot.nodemanager.model.node.set
+!!node.define
     description:'this is a description'
     id:3 
     farmid:3
@@ -12,7 +12,7 @@ example node definition, description is optional
     powermanager_port:2
     certified:yes
 
-!!farmerbot.nodemanager.model.node.set
+!!node.define
     id:5
     farmid:3
     powermanager:'wol'
