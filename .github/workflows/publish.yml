@@ -37,5 +37,3 @@ jobs:
           context: .
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            GRID3_CLIENT_VERSION=${{ steps.meta.outputs.version }}

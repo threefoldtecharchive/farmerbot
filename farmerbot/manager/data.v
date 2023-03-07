@@ -58,7 +58,7 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 				d.logger.info("${data_manager_prefix} Node ${node.id} shutdown was successful.")
 			}
 			.on {
-				d.logger.error("${data_manager_prefix} Node ${node.id} is not responding while we expect it to!")
+				d.logger.error("${data_manager_prefix} Node ${node.id} is not responding while we expect it to: $err")
 			}
 			else {
 				d.logger.info("${data_manager_prefix} Node ${node.id} is OFF.")
