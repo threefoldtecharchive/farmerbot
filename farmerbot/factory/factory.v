@@ -1,43 +1,172 @@
 module factory
 
-import freeflowuniverse.crystallib.actionparser
+import freeflowuniverse.baobab
+import freeflowuniverse.baobab.actionrunner
+import freeflowuniverse.baobab.actions
+import freeflowuniverse.baobab.client
+import freeflowuniverse.baobab.processor
 import freeflowuniverse.crystallib.pathlib
-import freeflowuniverse.crystallib.texttools
 import threefoldtech.farmerbot.system
-import threefoldtech.farmerbot.powermanagers
-import threefoldtech.farmerbot.node
+import threefoldtech.farmerbot.manager
+
+
+import log
+import os { Signal }
 import regex
+import time
 
-pub fn run(path0 string) !system.DB {
+[heap]
+pub struct Farmerbot {
+pub:
+	redis_address string
+pub mut:
+	running bool
+	path string
+	db &system.DB
+	logger &log.Logger
+	tfchain &system.ITfChain
+	zos &system.IZos
+	managers map[string]&manager.Manager
+	processor processor.Processor
+	actionrunner actionrunner.ActionRunner
+}
 
-	mut db := system.DB{}
+pub fn (f &Farmerbot) get_manager(name string) !&manager.Manager {
+	return f.managers[name] or {
+		return error("Unknown manager $name")
+	}
+}
 
-	mut path := pathlib.get_dir(path0, false)!	
+fn (mut f Farmerbot) update() {
+	for f.running {
+		time_start := time.now()
+		for _, mut manager in f.managers {
+			manager.update()
+		}
+		delta := time.now()-time_start
+		f.logger.info("Elapsed time for update: ${delta.minutes()}")
+		time_to_sleep := if delta.minutes() >= 5 { 0 } else { 5 - delta.minutes() }
+		time.sleep(time.minute * time_to_sleep)
+	}
+}
 
-	//ADD THE KNOWN POWER MANAGERS
-	mut pwr1 := powermanagers.PowerManagerWakeOnLan{}
-	mut pwr2 := powermanagers.PowerManagerRacktivity{}
-	mut node := node.NodeManager{}
-
+pub fn (mut f Farmerbot) init_db() ! {
+	f.logger.info("Initializing database")
+	f.db.nodes = map[u32]&system.Node {}
+	f.db.farm = &system.Farm {}
+	mut path := pathlib.get_dir(f.path, false)!
 	mut re := regex.regex_opt(".*") or { panic(err) }
 	ar := path.list(regex:re, recursive:true)!
-	for p in ar{
+	for p in ar {
 		if p.path.ends_with(".md") {
-			mut parser := actionparser.file_parse(p.path)!
+			mut parser := actions.file_parse(p.path)!
 			for mut action in parser.actions {
-				$if debug {
-					print(texttools.indent('$action\n ', '  |  '))
+				name := action.name.split(".")[1]
+				mut m := f.managers[name] or {
+					f.logger.error("Unknown manager ${name}. Skipping this action")
+					continue
 				}
-				name := action.name.split(".")[0]
-				if name == "powermanager" {
-					pwr1.execute(mut &db, mut &action)!
-					pwr2.execute(mut &db, mut &action)!
-				}
-				if name == "node" {
-					node.execute(mut &db, mut &action)!
-				}		
-			}					
+				m.init(mut &action)!
+			}
 		}
 	}
-	return db
+	f.logger.debug("${f.db.nodes}")
+}
+
+fn (mut f Farmerbot) init_managers() ! {
+	f.logger.info("Initializing managers")
+	f.managers = map[string]&manager.Manager{}
+	mut data_manager := &manager.DataManager {
+		client: client.new(f.redis_address)!
+		db: f.db
+		logger: f.logger
+		tfchain: f.tfchain
+		zos: f.zos
+	}
+	mut farm_manager := &manager.FarmManager {
+		client: client.new(f.redis_address)!
+		db: f.db 
+		logger: f.logger
+		tfchain: f.tfchain
+		zos: f.zos
+	}
+	mut node_manager := &manager.NodeManager {
+		client: client.new(f.redis_address)!
+		db: f.db 
+		logger: f.logger
+		tfchain: f.tfchain
+		zos: f.zos
+	}
+	mut power_manager := &manager.PowerManager {
+		client: client.new(f.redis_address)!
+		db: f.db
+		logger: f.logger
+		tfchain: f.tfchain
+		zos: f.zos
+	}
+
+	// ADD NEW MANAGERS HERE
+	f.managers["datamanager"] = data_manager
+	f.managers["farmmanager"] = farm_manager
+	f.managers["nodemanager"] = node_manager
+	f.managers["powermanager"] = power_manager
+
+	f.actionrunner = actionrunner.new(client.new(f.redis_address)!, [farm_manager, node_manager, power_manager])
+}
+
+pub fn (mut f Farmerbot) init() ! {
+	f.init_managers()!
+	f.init_db() or {
+		return error("Failed initializing the database: $err")
+	}
+}
+
+pub fn (mut f Farmerbot) run() ! {
+	f.running = true
+	spawn (&f).update()
+	spawn (&f.actionrunner).run()
+	t := spawn (&f.processor).run()
+	f.logger.info("Farmerbot up and running (version: ${system.version})")
+	t.wait()
+	f.logger.info("Shutdown successful")
+}
+
+pub fn (mut f Farmerbot) shutdown() {
+	f.logger.info("Shutting down")
+	f.actionrunner.running = false
+	f.processor.running = false
+	f.running = false
+}
+
+pub fn (mut f Farmerbot) on_sigint(signal Signal) {
+	f.shutdown()
+}
+
+pub fn new(path string, grid3_http_address string, redis_address string, network string) !&Farmerbot {
+	mut logger := system.logger()
+	mut f := &Farmerbot {
+		redis_address: redis_address
+		path: path
+		db: &system.DB {
+			farm: &system.Farm {}
+		}
+		tfchain: &system.TfChain {
+			address: grid3_http_address
+		}
+		zos: if network == "DEV" {
+				&system.IZos(system.new_zosrmbpeer(redis_address)!)
+			} else {
+				&system.IZos(system.new_zosrmbgo(redis_address)!)
+			}
+		logger: logger
+		processor: processor.new(redis_address, logger)!
+		actionrunner: actionrunner.ActionRunner {
+			client: &client.Client {}
+		}
+	}
+	f.init() or {
+		f.logger.error("$err")
+		return err
+	}
+	return f
 }

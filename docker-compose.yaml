@@ -1,0 +1,54 @@
+services:
+  farmerbot:
+    image: ghcr.io/threefoldtech/farmerbot:0.1.0-rc5
+    depends_on:
+      redis:
+        condition: service_healthy
+      rmbpeer:
+        condition: service_started
+      grid3_client:
+        condition: service_healthy
+    volumes:
+      - ./config:/farmerbot
+    command: -c /farmerbot/ --grid3 "http://grid3_client:3000" --redis "redis:6379" --debug --output /farmerbot/farmerbot.log
+
+  rmbpeer:
+    image: ghcr.io/threefoldtech/rmb-peer:latest
+    depends_on:
+      redis:
+        condition: service_healthy
+    entrypoint: /bin/sh -c
+    command: ["/usr/sbin/rmb-peer --redis redis://redis:6379 --mnemonics \"$MNEMONIC\" --relay $RELAY -s $SUBSTRATE -d"]
+
+  grid3_client:
+    image: ghcr.io/threefoldtech/grid3_client_ts:2.0.0-rc7
+    depends_on:
+      redis:
+        condition: service_healthy
+    entrypoint: /bin/sh -c
+    command: ["echo \"{\\\"network\\\":\\\"$NETWORK\\\",\\\"mnemonic\\\":\\\"$MNEMONIC\\\",\\\"rmb_proxy\\\":false,\\\"storeSecret\\\":\\\"secret\\\",\\\"keypairType\\\":\\\"sr25519\\\"}\" > ~/config.json && yarn httpserver -c ~/config.json" ]
+    ports:
+      - '3000'
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail -X POST -H \"Content-Type: application/json\" http://127.0.0.1:3000/twins/get_my_twin_id || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7.0.8-alpine
+    restart: always
+    ports:
+      - '6379'
+    command: --save 20 1
+    volumes: 
+      - db:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  db:
+    driver: local
