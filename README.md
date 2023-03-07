@@ -3,68 +3,31 @@ Welcome to the farmerbot. The farmerbot is a service that a farmer can run allow
 
 The key feature of the farmerbot is powermanagement. The farmerbot will automatically shutdown nodes from its farm whenever possible and bring them back on when they are needed using Wake-on-Lan (WOL). It will try to maximize downtime as much as possible by recommending which nodes to use, this is one of the requests that the farmerbot can handle (asking for a node to deploy on).
 
-The behavior of the farmerbot is customizable through markup definition files. You can find an example [here](example_data/nodes.md). 
+The behavior of the farmerbot is customizable through markup definition files. You can find an example [here](example_data/nodes.md).
 
-## Under the hood
+## Dependencies
+The farmerbot has the following dependencies
+- redis
+- [rmb-peer](https://github.com/threefoldtech/rmb-rs/releases)
+- [grid3_client_ts http server](https://github.com/threefoldtech/grid3_client_ts/blob/development/docs/http_server.md)
+
+If you are building from scratch you will need these V modules installed:
+- [crystallib](https://github.com/freeflowuniverse/crystallib)
+- [baobab](https://github.com/freeflowuniverse/baobab)
+
+## Install
+You will need to clone the V modules that the farmerbot depends on. Then you can run the bash script $install.sh$:
+> run install.sh
 The farmerbot has been implemented using the actor model principles. It contains two actors that are able to execute jobs (actions that need to be executed by a specific actor).
 
+## Under the hood
 The first actor is the nodemanager which is in charge of executing jobs related to nodes (e.g. finding a suitable node). The second actor is the powermanager which allows us to power on and off nodes in the farm.
 
 Actors can schedule the execution of jobs for other actors which might or might not be running on the same system. For example, the nodemanager might schedule the execution of a job to power on a node (which is meant for the powermanager). The repository [baobab](https://github.com/freeflowuniverse/baobab) contains the logic for scheduling jobs.
 
 Jobs don't have to originate from the system running the farmerbot. It may as well be scheduled from another system (with another twin id). The job to find a suitable node for example will come from the TSClient (which is located on another system). These jobs will be send from the TSClient to the farmerbot via [RMB](https://github.com/threefoldtech/rmb-rs).
 
-## Configuration
-As mentioned before the farmerbot can be configured through markup definition files. This section will guide you through the possibilities.
-
-### Nodes
-The farmerbot requires you to setup the nodes that the farmerbot should handle. 
-Required attributes:
-- id
-- twinid
-
-Optional attributes:
-- cpuoverprovision => a value between 1 and 4 defining how much the cpu can be overprovisioned (2 means double the amount of cpus)
-- public_config => true or false telling the farmerbot whether or not the node has a public config
-- dedicated => true or false telling the farmerbot whether or not the node is dedicated (only allow renting the full node)
-- certified => true or false telling the farmerbot whether or not the node is certified
-
-Example:
-```
-!!farmerbot.nodemanager.define
-    id:20
-    twinid:105
-    public_config:true
-    dedicated:1
-    certified:yes
-    cpuoverprovision:1
-```
-
-### Power
-The powermanagement behavior is configurable through the following attributes (they are optional):
-- wake_up_threshold => a value between 50 and 80 defining the threshold at which nodes will be powered on or powered off. If the usage percentage (total used resources devided by the total amount of resources) is greater then the threshold a new node will be powered on. In the other case the farmerbot will try to power off nodes if possible.
-- periodic_wakeup => the time at which the periodic wakeups (powering on a node that is off) should happen. The offline nodes will be powered sequentially with 5 minutes in between so we cannot guarantee that the node will be powered on at that exact moment. 
-
-Example:
-```
-!!farmerbot.powermanager.define
-    wake_up_threshold:75
-    periodic_wakeup:8:30AM
-```
-
-### Farm
-Two more settings are required regarding the farm:
-- id => the id of the farm
-- public_ips => the amount of public ips that the farm has (don't forget to set this value)
-
-Example:
-```
-!!farmerbot.farmmanager.define
-    id:3
-    public_ips:2
-```
-
-## Jobs
+### Jobs
 
 Jobs can be send to the farmerbot via RMB. This section describes the arguments that they accept. Please take a look at [baobab](https://github.com/freeflowuniverse/baobab) for more information on how you should construct such a job (**especially how you can add the arguments**).
 
@@ -100,32 +63,70 @@ This job is only allowed to be executed if it comes from the farmer (the twinid 
 Arguments:
 - _nodeid_ => the node id of the node that needs to powered off
 
-## Dependencies
-The farmerbot has the following dependencies
-- redis
-- [rmb-peer](https://github.com/threefoldtech/rmb-rs/releases)
-- [grid3_client_ts http server](https://github.com/threefoldtech/grid3_client_ts/blob/development/docs/http_server.md)
+## Running the farmerbot in production
+The farmerbot is shipped inside a docker image so that it is easy to run in a docker environment a [docker compose file](docker-compose.yaml). It requires some configuration written in a markdown file. This file should be located inside a folder called **config** in the directory of the docker compose file. The possible configuration will be discussed in this section. To run the the farmerbot just run the following command (make sure to provide the mnemonic of the farm):
+```
+MNEMONIC=$(cat mnemonic.txt) docker compose up
+```
 
-If you are building from scratch you will need these V modules installed:
-- [crystallib](https://github.com/freeflowuniverse/crystallib)
-- [baobab](https://github.com/freeflowuniverse/baobab)
+### Node configuration
+The farmerbot requires you to setup the nodes that the farmerbot should manage.
+Required attributes:
+- id
+- twinid
 
-## Install
-You will need to clone the V modules that the farmerbot depends on. Then you can run the bash script $install.sh$:
-> run install.sh
+Optional attributes:
+- cpuoverprovision => a value between 1 and 4 defining how much the cpu can be overprovisioned (2 means double the amount of cpus)
+- public_config => true or false telling the farmerbot whether or not the node has a public config
+- dedicated => true or false telling the farmerbot whether or not the node is dedicated (only allow renting the full node)
+- certified => true or false telling the farmerbot whether or not the node is certified
 
-## Running the farmerbot
+Example:
+```
+!!farmerbot.nodemanager.define
+    id:20
+    twinid:105
+    public_config:true
+    dedicated:1
+    certified:yes
+    cpuoverprovision:1
+```
+
+### Farm configuration
+Two more settings are required regarding the farm:
+- id => the id of the farm
+- public_ips => the amount of public ips that the farm has (don't forget to set this value)
+
+Example:
+```
+!!farmerbot.farmmanager.define
+    id:3
+    public_ips:2
+```
+
+### Power configuration
+The powermanagement behavior is configurable through the following attributes (they are optional):
+- wake_up_threshold => a value between 50 and 80 defining the threshold at which nodes will be powered on or off. If the usage percentage (total used resources devided by the total amount of resources) is greater then the threshold a new node will be powered on. In the other case the farmerbot will try to power off nodes if possible.
+- periodic_wakeup => the time at which the periodic wakeups (powering on a node that is off) should happen. The offline nodes will be powered on sequentially with an interval of 5 minutes starting at the time defined in periodic_wakeup.
+
+Example:
+```
+!!farmerbot.powermanager.define
+    wake_up_threshold:75
+    periodic_wakeup:8:30AM
+```
+
+## Running the farmerbot for development
 Make sure you have all the dependencies installed before running the commands below. You also have to configure some things in markup definition files:
-
 - the nodes have to be configured (see example_data/1_data/nodes.md)
 
-Now run the dependencies. Make sure to use the mnemonics of your farm as it is needed for some calls to the chain.
-> rmb-peer --mnemonics "$(cat mnemonics.txt)" --relay wss://relay.dev.grid.tf:443 --substrate wss://tfchain.dev.grid.tf:443
+Now run the dependencies. Make sure to use the mnemonic of your farm as it is needed for some calls to the chain.
+> rmb-peer --mnemonics "$(cat mnemonic.txt)" --relay wss://relay.dev.grid.tf:443 --substrate wss://tfchain.dev.grid.tf:443
 > See [this page](https://github.com/threefoldtech/grid3_client_ts/blob/development/docs/http_server.md) on how to run the grid3 client ts
 
 Now you can run the following command:
-> v run start.v
+> v run start.v -c dir_with_configuration
 
 ## Running tests
-Make sure to go through the documentation under [tests](tests/README.md). 
+Make sure to go through the documentation under [tests](tests/README.md).
 
