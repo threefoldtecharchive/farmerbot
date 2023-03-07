@@ -64,7 +64,7 @@ Arguments:
 - _nodeid_ => the node id of the node that needs to powered off
 
 ## Running the farmerbot in production
-The farmerbot is shipped inside a docker image so that it is easy to run in a docker environment a [docker compose file](docker-compose.yaml). It requires some configuration written in a markdown file. This file should be located inside a folder called **config** in the directory of the docker compose file. The possible configuration will be discussed in this section. You should also create a **.env** file next to the docker compose file with the content shown below:
+The farmerbot is shipped inside a [docker image](https://github.com/threefoldtech/farmerbot/pkgs/container/farmerbot) so that it is easy to run in a docker environment a [docker compose file](docker-compose.yaml). It requires some configuration written in a markdown file. This file should be located inside a folder called **config** in the directory of the docker compose file. The possible configuration will be discussed in this section. You should also create a **.env** file next to the docker compose file with the content shown below:
 ```
 MNEMONIC="<THE_MNEMONIC_OF_YOUR_FARM>"
 NETWORK=dev
@@ -72,13 +72,13 @@ RELAY=wss://relay.dev.grid.tf:443
 SUBSTRATE=wss://tfchain.dev.grid.tf:443
 ```
 
-Please modify the fields to what is required: change the network, relay, etc according to what is needed. Now to run the the farmerbot just run the following command (make sure to provide the mnemonic of the farm):
+Please modify the fields to what is required (network, relay, etc). Now to run the the farmerbot just run the following command (make sure to provide the mnemonic of the farm):
 ```
 docker compose up
 ```
 
 ### Node configuration
-The farmerbot requires you to setup the nodes that the farmerbot should manage.
+The farmerbot will manage the nodes that you define in the configuration.
 Required attributes:
 - id
 - twinid
@@ -119,6 +119,36 @@ The powermanagement behavior is configurable through the following attributes (t
 
 Example:
 ```
+!!farmerbot.powermanager.define
+    wake_up_threshold:75
+    periodic_wakeup:8:30AM
+```
+
+### Example of a configuration file
+```
+My nodes
+!!farmerbot.nodemanager.define
+    id:20
+    twinid:105
+    public_config:true
+    dedicated:1
+    certified:yes
+    cpuoverprovision:1
+
+!!farmerbot.nodemanager.define
+    id:21
+    twinid:106
+
+!!farmerbot.nodemanager.define
+    id:22
+    twinid:107
+
+Farm configuration
+!!farmerbot.farmmanager.define
+    id:3
+    public_ips:2
+
+Power configuration
 !!farmerbot.powermanager.define
     wake_up_threshold:75
     periodic_wakeup:8:30AM
