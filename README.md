@@ -64,7 +64,7 @@ Arguments:
 - _nodeid_ => the node id of the node that needs to powered off
 
 ## Running the farmerbot in production
-The farmerbot is shipped inside a [docker image](https://github.com/threefoldtech/farmerbot/pkgs/container/farmerbot) so that it is easy to run in a docker environment a [docker compose file](docker-compose.yaml). It requires some configuration written in a markdown file. This file should be located inside a folder called **config** in the directory of the docker compose file. The possible configuration will be discussed in this section. You should also create a **.env** file next to the docker compose file with the content shown below:
+The farmerbot is shipped inside a [docker image](https://github.com/threefoldtech/farmerbot/pkgs/container/farmerbot) so that it is easy to run in a [docker environment](docker-compose.yaml). It requires some configuration written in a markdown file. This file should be located inside a folder called **config** in the directory of the docker compose file. The possible configuration will be discussed in this section. You should also create a **.env** file next to the docker compose file with the content shown below:
 ```
 MNEMONIC="<THE_MNEMONIC_OF_YOUR_FARM>"
 NETWORK=dev
