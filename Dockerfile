@@ -7,7 +7,7 @@ RUN git clone -b development_actor https://github.com/freeflowuniverse/baobab.gi
 RUN bash install.sh
 
 WORKDIR /crystallib
-RUN git clone -b development_38 https://github.com/freeflowuniverse/crystallib.git .
+RUN git clone -b development https://github.com/freeflowuniverse/crystallib.git .
 RUN bash install.sh
 
 WORKDIR /farmerbot
@@ -25,7 +25,7 @@ COPY --from=build /farmerbot/main /usr/local/bin/farmerbot
 
 RUN apt-get update && apt-get install -y curl ca-certificates libatomic1
 
-# checks	
+# checks
 RUN ldd /usr/local/bin/farmerbot && /usr/local/bin/farmerbot --version
 
 # Shrinking
