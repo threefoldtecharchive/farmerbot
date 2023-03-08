@@ -13,7 +13,7 @@ services:
     command: -c /farmerbot/ --grid3 "http://grid3_client:3000" --redis "redis:6379" --debug --output /farmerbot/farmerbot.log
 
   rmbpeer:
-    image: ghcr.io/threefoldtech/rmb-peer:latest
+    image: ghcr.io/threefoldtech/rmb-peer:v1.0.2-rc4
     depends_on:
       redis:
         condition: service_healthy
