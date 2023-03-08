@@ -16,7 +16,7 @@ jobs:
         run: sudo apt install -y libgc-dev tmux mc git rsync curl
 
       - name: Setup Vlang
-        uses: vlang/setup-v@v1
+        uses: vlang/setup-v@v1.3
         with:
           check-latest: true
       
