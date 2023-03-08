@@ -86,4 +86,7 @@ pub fn main() {
 	unauthorized(mut redis, u32(twinid), u32(twinidfarm), mut cl) or {
 		eprintln(err)
 	}
+	test(mut redis, u32(twinid), u32(twinidfarm), mut cl) or {
+		eprintln(err)
+	}
 }

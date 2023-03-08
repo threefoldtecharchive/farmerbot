@@ -58,9 +58,9 @@ fn (mut n NodeManager) data_set(mut action actions.Action) ! {
 			overprovision_cpu: cpu_overprovision
 			total: system.Capacity {
 				cru: action.params.get_u64_default("cru", 0)!
-				sru: action.params.get_kilobytes_default("sru", 0)!
-				mru: action.params.get_kilobytes_default("mru", 0)!
-				hru: action.params.get_kilobytes_default("hru", 0)!
+				sru: action.params.get_resource_in_bytes_default("sru", 0)!
+				mru: action.params.get_resource_in_bytes_default("mru", 0)!
+				hru: action.params.get_resource_in_bytes_default("hru", 0)!
 			}
 		}
 		public_config: action.params.get_default_false("public_config")
@@ -83,9 +83,9 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	dedicated := job.args.get_default_false("dedicated")
 	node_exclude := job.args.get_list_u32("node_exclude")!
 	required_capacity := system.Capacity {
-		hru: job.args.get_kilobytes_default("required_hru", 0)!
-		sru: job.args.get_kilobytes_default("required_sru", 0)!
-		mru: job.args.get_kilobytes_default("required_mru", 0)!
+		hru: job.args.get_resource_in_bytes_default("required_hru", 0)!
+		sru: job.args.get_resource_in_bytes_default("required_sru", 0)!
+		mru: job.args.get_resource_in_bytes_default("required_mru", 0)!
 		cru: job.args.get_u64_default("required_cru", 0)!
 	}
 	

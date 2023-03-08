@@ -9,9 +9,9 @@ example node definition, description is optional
     id:3 
     twinid:2
     hru:1024GB
-    sru:512GB
+    sru:524288MB
     cru:8
-    mru:16GB
+    mru:17179869184
     cpuoverprovision:2
 
 !!farmerbot.nodemanager.define
@@ -20,7 +20,7 @@ example node definition, description is optional
     hru:2048GB
     sru:1024GB
     cru:16
-    mru:32GB
+    mru:33554432KB
 
 !!farmerbot.nodemanager.define
     id:8
