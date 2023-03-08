@@ -50,7 +50,7 @@ example node definition, description is optional
     sru:1024GB
     cru:16
     mru:32GB
-
+    never_shutdown:1
 
 !!farmerbot.powermanager.configure
     wake_up_threshold:80

@@ -84,6 +84,7 @@ Required attributes:
 - twinid
 
 Optional attributes:
+- never_shutdown => true or false telling the farmerbot whether or not the node should never be shutdown
 - cpuoverprovision => a value between 1 and 4 defining how much the cpu can be overprovisioned (2 means double the amount of cpus)
 - public_config => true or false telling the farmerbot whether or not the node has a public config
 - dedicated => true or false telling the farmerbot whether or not the node is dedicated (only allow renting the full node)
@@ -98,6 +99,7 @@ Example:
     dedicated:1
     certified:yes
     cpuoverprovision:1
+    never_shutdown:true
 ```
 
 ### Farm configuration
