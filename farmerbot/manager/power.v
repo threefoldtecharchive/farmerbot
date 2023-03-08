@@ -92,7 +92,7 @@ fn (mut p PowerManager) power_management() {
  	} else {
  		unused_nodes := p.db.nodes.values().filter(it.powerstate == .on && it.is_unused())
  		// nodes with public config can't be shutdown
- 		nodes_allowed_to_shutdown := unused_nodes.filter(!it.public_config)
+ 		nodes_allowed_to_shutdown := unused_nodes.filter(!it.public_config && !it.never_shutdown)
 
  		if unused_nodes.len > 1 {
  			// shutdown a node if there is more then 1 unused node (aka keep at least one node online)
@@ -171,11 +171,16 @@ fn (mut p PowerManager) poweroff(mut job jobs.ActionJob) ! {
 	p.logger.info("${power_manager_prefix} Executing job: POWEROFF ${node.id}")
 	p.logger.debug("${power_manager_prefix} $job")
 
-
 	if node.powerstate == .shuttingdown ||
 		node.powerstate == .off {
 		// nothing to do
 		return
+	}
+	if node.public_config {
+		return error("Cannot power off node, node has public config.")
+	}
+	if node.never_shutdown {
+		return error("Cannot power off node, node is configured to never be shutdown.")
 	}
 	if p.db.nodes.values().filter(it.powerstate == .on).len < 2 {
 		return error("Cannot power off node, at least one node should be on in the farm.")

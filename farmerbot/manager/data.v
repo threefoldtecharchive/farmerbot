@@ -110,8 +110,4 @@ fn (mut d DataManager) update_node_data(nodeid u32) {
 		d.logger.error("${data_manager_prefix} Failed to update public config of node ${node.id}: $err")
 		return
 	}
-	node.wg_ports = d.zos.get_zos_wg_ports(node.twinid) or {
-		d.logger.error("${data_manager_prefix} Failed to update the wireguard ports used by node ${node.id}: $err")
-		return
-	}
 }

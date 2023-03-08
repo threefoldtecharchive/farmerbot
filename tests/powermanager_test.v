@@ -144,6 +144,58 @@ fn test_poweroff_node_one_should_stay_on_fails() {
 	)!
 }
 
+// Test powering off a node that is configured never to be shutdown
+fn test_poweroff_node_configured_never_to_shutdown() {
+	run_test("test_poweroff_node_configured_never_to_shutdown",
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
+			// prepare
+			farmerbot.db.get_node(3)!.never_shutdown = true
+			mut args := Params {}
+			args.kwarg_add("nodeid", "3")
+
+			// act
+			mut job := c.job_new_wait(
+				twinid: c.twinid
+				action: system.job_power_off
+				args: args
+				actionsource: ""
+			) or {
+				return error("failed to create and wait for job")
+			}
+
+			// assert
+			ensure_error_message(&job, "Cannot power off node, node is configured to never be shutdown.")!
+			assert farmerbot.db.get_node(3)!.powerstate == .on
+		}
+	)!
+}
+
+// Test powering off a node that has a public 
+fn test_poweroff_node_with_public_config() {
+	run_test("test_poweroff_node_with_public_config",
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
+			// prepare
+			farmerbot.db.get_node(3)!.public_config = true
+			mut args := Params {}
+			args.kwarg_add("nodeid", "3")
+
+			// act
+			mut job := c.job_new_wait(
+				twinid: c.twinid
+				action: system.job_power_off
+				args: args
+				actionsource: ""
+			) or {
+				return error("failed to create and wait for job")
+			}
+
+			// assert
+			ensure_error_message(&job, "Cannot power off node, node has public config.")!
+			assert farmerbot.db.get_node(3)!.powerstate == .on
+		}
+	)!
+}
+
 // Test powering on a node that is offline
 fn test_poweron_node() {
 	run_test("test_poweron_node", 
@@ -324,6 +376,33 @@ fn test_power_management_resource_usage_too_low() {
 			// assert
 			assert farmerbot.db.get_node(5)!.powerstate == .shuttingdown
 			assert farmerbot.db.get_node(8)!.powerstate == .on
+		}
+	)!
+}
+
+// Test power management when usage is too low but we can't power off
+// nodes that are configured to never shutdown
+fn test_power_management_resource_usage_too_low_nodes_that_cant_shutdown() {
+	run_test("test_power_management_resource_usage_too_low_nodes_that_cant_shutdown",
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
+			// prepare
+			for mut node in farmerbot.db.nodes.values() {
+				node.powerstate = .on
+				node.public_config = false
+				node.never_shutdown = false
+			}
+			farmerbot.db.get_node(3)!.never_shutdown = true
+			farmerbot.db.get_node(5)!.public_config = true
+			farmerbot.db.get_node(8)!.never_shutdown = true
+
+			// act
+			powermanager_update(mut farmerbot)!
+
+			// assert
+			assert farmerbot.db.get_node(3)!.powerstate == .on
+			assert farmerbot.db.get_node(5)!.powerstate == .on
+			assert farmerbot.db.get_node(8)!.powerstate == .on
+			assert farmerbot.db.nodes.values().filter(it.powerstate == .shuttingdown).len == farmerbot.db.nodes.len - 3
 		}
 	)!
 }

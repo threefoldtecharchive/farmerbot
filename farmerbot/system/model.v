@@ -38,7 +38,6 @@ pub mut:
 	dedicated bool
 	public_config bool
 	public_ips_used u64
-	wg_ports []u16
 	resources ConsumableResources
 	pools []ZosPool
 	has_active_rent_contract bool
@@ -46,6 +45,7 @@ pub mut:
 	timeout_claimed_resources Time
 	last_time_powerstate_changed Time
 	last_time_awake Time
+	never_shutdown bool
 }
 
 pub fn (mut n Node) update_resources(zos_stats &ZosResourcesStatistics) {

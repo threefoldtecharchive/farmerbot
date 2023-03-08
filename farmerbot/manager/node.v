@@ -67,6 +67,7 @@ fn (mut n NodeManager) data_set(mut action actions.Action) ! {
 		dedicated: action.params.get_default_false("dedicated")
 		certified: action.params.get_default_false("certified")
 		powerstate: .on
+		never_shutdown: action.params.get_default_false("never_shutdown")
 	}
 
 	n.db.nodes[node.id] = &node
