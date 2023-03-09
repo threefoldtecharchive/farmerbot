@@ -10,10 +10,11 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
+    container:
+      image: ubuntu-latest
     steps:
       - name: Install dependencies
-        run: sudo apt install -y libgc-dev tmux mc git rsync curl
+        run: apt install -y libgc-dev tmux mc git rsync curl
 
       - name: Setup Vlang
         uses: vlang/setup-v@v1.3
