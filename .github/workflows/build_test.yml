@@ -14,7 +14,6 @@ jobs:
       redis:
         image: redis
         options: >-
-          --network host
           --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
