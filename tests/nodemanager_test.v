@@ -329,7 +329,7 @@ fn test_find_node_with_public_ips_fails() {
 			}
 
 			// assert
-			ensure_error_message(&job, "No more public ips available")!
+			ensure_error_message(&job, "Not enough public ips available")!
 		}
 	)!
 }

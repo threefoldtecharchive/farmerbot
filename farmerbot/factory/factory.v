@@ -142,7 +142,7 @@ pub fn (mut f Farmerbot) on_sigint(signal Signal) {
 	f.shutdown()
 }
 
-pub fn new(path string, grid3_http_address string, redis_address string, network string) !&Farmerbot {
+pub fn new(path string, grid3_http_address string, redis_address string) !&Farmerbot {
 	mut logger := system.logger()
 	mut f := &Farmerbot {
 		redis_address: redis_address
@@ -153,11 +153,7 @@ pub fn new(path string, grid3_http_address string, redis_address string, network
 		tfchain: &system.TfChain {
 			address: grid3_http_address
 		}
-		zos: if network == "DEV" {
-				&system.IZos(system.new_zosrmbpeer(redis_address)!)
-			} else {
-				&system.IZos(system.new_zosrmbgo(redis_address)!)
-			}
+		zos: &system.IZos(system.new_zosrmbpeer(redis_address)!)
 		logger: logger
 		processor: processor.new(redis_address, logger)!
 		actionrunner: actionrunner.ActionRunner {

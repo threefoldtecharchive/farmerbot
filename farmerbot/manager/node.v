@@ -95,7 +95,7 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 			public_ips_used_by_nodes += node.public_ips_used
 		}
 		if public_ips_used_by_nodes + public_ips > n.db.farm.public_ips {
-			return error("No more public ips available")
+			return error("Not enough public ips available")
 		}
 	}
 

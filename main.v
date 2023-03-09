@@ -20,7 +20,6 @@ fn main() {
 	redis := fp.string('redis', `r`, '${default_redis_address}', 'The address of the redis db.')
 	directory := fp.string('config_dir', `c`, '${default_data_dir}', 'The directory containing the markup definition files with the configuration of the nodes.')
 	output_file := fp.string('output', `o`, '', 'The file to save the logs of the farmerbot in.')
-	network := fp.string('network', `n`, 'DEV', 'The network to run on.')
 	debug_log := fp.bool('debug', 0, false, 'By setting this flag the farmerbot will print debug logs too.')
 	version := fp.bool('version', 0, false, 'Print the version of the farmebot')
 
@@ -41,7 +40,7 @@ fn main() {
 		os.mkdir_all(os.dir(output_file), os.MkdirParams{})!
 		os.setenv("FARMERBOT_LOG_OUTPUT", output_file, true)
 	}
-	mut f := factory.new(directory, grid3_http_address, redis, network) or {
+	mut f := factory.new(directory, grid3_http_address, redis) or {
 		eprintln(err)
 		exit(1)
 	}
