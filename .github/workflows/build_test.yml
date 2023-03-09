@@ -14,13 +14,14 @@ jobs:
       redis:
         image: redis
         options: >-
+          --net host
           --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
     steps:
       - name: Install dependencies
-        run: apt install -y libgc-dev tmux mc git rsync curl
+        run: sudo apt install -y libgc-dev tmux mc git rsync curl
 
       - name: Setup Vlang
         uses: vlang/setup-v@v1.3
