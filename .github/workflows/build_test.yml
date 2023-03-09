@@ -18,6 +18,8 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          - 6379:6379
     steps:
       - name: Install dependencies
         run: sudo apt install -y libgc-dev tmux mc git rsync curl
@@ -49,7 +51,5 @@ jobs:
           v main.v
 
       - name: Unit tests
-        env:
-          FARMERBOT_REDIS_ADDRESS: redis:6379
         run: |
           bash tests/run_tests.sh
