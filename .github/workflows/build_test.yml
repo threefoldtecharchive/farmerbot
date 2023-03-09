@@ -28,12 +28,7 @@ jobs:
         uses: vlang/setup-v@v1.3
         with:
           check-latest: true
-      
-      # - name: Start Redis
-      #   uses: supercharge/redis-github-action@1.5.0
-      #   with:
-      #     redis-version: 7.0.8
-
+  
       - uses: actions/checkout@v3
 
       # TODO release the dependencies mentioned below!
