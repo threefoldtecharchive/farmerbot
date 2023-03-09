@@ -55,7 +55,12 @@ pub mut:
 }
 
 pub fn (mut t TestEnvironment) run(name string, test Test) ! {
-	mut c := client.new("localhost:6379") or { 
+
+	mut redis_address := os.getenv("FARMERBOT_REDIS_ADDRESS")
+	if redis_address == "" {
+		redis_address = "localhost:6379"
+	}
+	mut c := client.new(redis_address) or { 
 		return error("Failed creating client: $err")
 	}
 
@@ -68,7 +73,7 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 	t.zos_mock = &ZosMock {}
 	mut logger := system.logger()
 	mut f := &Farmerbot {
-		redis_address: "localhost:6379"
+		redis_address: redis_address
 		path: testpath
 		db: &system.DB {
 			farm: &system.Farm {}
@@ -76,7 +81,7 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 		logger: logger
 		tfchain: t.tfchain_mock
 		zos: t.zos_mock
-		processor: processor.new("localhost:6379", logger)!
+		processor: processor.new(redis_address, logger)!
 		actionrunner: actionrunner.ActionRunner {
 			client: &Client {}
 		}
