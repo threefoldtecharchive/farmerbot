@@ -21,7 +21,7 @@ services:
     command: ["/usr/sbin/rmb-peer --redis redis://redis:6379 --mnemonics \"$MNEMONIC\" --relay $RELAY -s $SUBSTRATE -d"]
 
   grid3_client:
-    image: ghcr.io/threefoldtech/grid3_client_ts:2.0.0-rc7
+    image: ghcr.io/threefoldtech/grid3_client_ts:2.0.0-rc10
     depends_on:
       redis:
         condition: service_healthy
