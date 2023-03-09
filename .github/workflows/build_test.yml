@@ -10,8 +10,14 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    container:
-      image: ubuntu-latest
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Install dependencies
         run: apt install -y libgc-dev tmux mc git rsync curl
@@ -21,10 +27,10 @@ jobs:
         with:
           check-latest: true
       
-      - name: Start Redis
-        uses: supercharge/redis-github-action@1.5.0
-        with:
-          redis-version: 7.0.8
+      # - name: Start Redis
+      #   uses: supercharge/redis-github-action@1.5.0
+      #   with:
+      #     redis-version: 7.0.8
 
       - uses: actions/checkout@v3
 
