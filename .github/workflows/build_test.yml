@@ -34,7 +34,7 @@ jobs:
       # TODO release the dependencies mentioned below!
       - name: Istall dependencies
         run: |
-          cd ../ && git clone -b development_actor https://github.com/freeflowuniverse/baobab.git
+          cd ../ && git clone -b development https://github.com/freeflowuniverse/baobab.git
           cd baobab && bash install.sh
           cd ../ && git clone -b development https://github.com/freeflowuniverse/crystallib.git
           cd crystallib && bash install.sh
