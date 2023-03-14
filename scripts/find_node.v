@@ -18,7 +18,7 @@ import time
 fn find_job(mut redis redisclient.Redis, twinid u32, twinidfarm u32, mut cl client.Client) ! {
 	mut args := params.Params{}
 	args.kwarg_add("required_hru", "500GB")
-	args.kwarg_add("required_sru", "25GB")
+	args.kwarg_add("required_sru", "10GB")
 	args.kwarg_add("required_mru", "2GB")
 	args.kwarg_add("required_cru", "2")
 	//args.kwarg_add("node_exclude", "[77]")
