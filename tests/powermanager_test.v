@@ -496,3 +496,56 @@ fn test_power_management_periodic_wakeup() {
 		}
 	)!
 }
+
+// Test power management: we only power off a node after 30 minutes after a periodic wake up to allow the node to 
+// report its uptime. Don't shutdown nodes where the powerstate was changed within 30 minutes ago.
+fn test_power_management_after_periodic_wakeup_too_early_to_shutdown() {
+	run_test("test_power_management_after_periodic_wakeup_too_early_to_shutdown",
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
+			// prepare
+			for mut node in farmerbot.db.nodes.values() {
+				node.powerstate = .off
+				node.last_time_awake = time.now()
+			}
+			farmerbot.db.get_node(3)!.powerstate = .on
+			farmerbot.db.get_node(3)!.last_time_powerstate_changed = time.now()
+			farmerbot.db.get_node(5)!.powerstate = .on
+			farmerbot.db.get_node(5)!.last_time_powerstate_changed = time.now()
+
+			// act
+			powermanager_update(mut farmerbot)!
+
+			// assert
+			assert farmerbot.db.get_node(3)!.powerstate == .on
+			assert farmerbot.db.get_node(5)!.powerstate == .on
+			assert farmerbot.db.nodes.values().filter(it.powerstate == .off).len == farmerbot.db.nodes.len - 2
+		}
+	)!
+}
+
+// Test power management: we only power off a node after 30 minutes after a periodic wake up to allow the node to 
+// report its uptime. Shutdown node where powerstate was changed 30 minutes or longer ago.
+fn test_power_management_after_periodic_wakeup_allowed_to_shutdown() {
+	run_test("test_power_management_after_periodic_wakeup_allowed_to_shutdown",
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
+			// prepare
+			for mut node in farmerbot.db.nodes.values() {
+				node.powerstate = .off
+				node.last_time_awake = time.now()
+			}
+			now := time.now()
+			farmerbot.db.get_node(3)!.powerstate = .on
+			farmerbot.db.get_node(3)!.last_time_powerstate_changed = now
+			farmerbot.db.get_node(5)!.powerstate = .on
+			farmerbot.db.get_node(5)!.last_time_powerstate_changed = now.add(time.minute * -30)
+
+			// act
+			powermanager_update(mut farmerbot)!
+
+			// assert
+			assert farmerbot.db.get_node(3)!.powerstate == .on
+			assert farmerbot.db.get_node(5)!.powerstate == .shuttingdown
+			assert farmerbot.db.nodes.values().filter(it.powerstate == .off).len == farmerbot.db.nodes.len - 2
+		}
+	)!
+}
