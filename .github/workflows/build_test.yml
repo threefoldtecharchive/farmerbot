@@ -46,5 +46,7 @@ jobs:
           v main.v
 
       - name: Unit tests
+        env: 
+          VJOBS: 1
         run: |
-          bash tests/run_tests.sh
+          v -stats test tests

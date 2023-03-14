@@ -75,7 +75,6 @@ fn (mut n NodeManager) data_set(mut action actions.Action) ! {
 
 fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	n.logger.info("${node_manager_prefix} Executing job: FIND_NODE")
-	n.logger.debug("${node_manager_prefix} $job")
 
 	certified := job.args.get_default_false("certified")
 	public_config := job.args.get_default_false("public_config")
@@ -89,6 +88,8 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 		cru: job.args.get_u64_default("required_cru", 0)!
 	}
 	
+	n.logger.debug("${node_manager_prefix} Requirements:\ncertified:${certified}\npublic_config:${public_config}\npublic_ips:${public_ips}\ndedicated:${dedicated}\nnode_exclude:${node_exclude}\nrequired_capacity:${required_capacity}")
+
 	if public_ips > 0 {
 		mut public_ips_used_by_nodes := u64(0)
 		for node in n.db.nodes.values() {

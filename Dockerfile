@@ -3,7 +3,7 @@ FROM thevlang/vlang:latest as build
 RUN apt-get update && apt-get install -y git
 
 WORKDIR /baobab
-RUN git clone -b development_actor https://github.com/freeflowuniverse/baobab.git .
+RUN git clone -b development https://github.com/freeflowuniverse/baobab.git .
 RUN bash install.sh
 
 WORKDIR /crystallib

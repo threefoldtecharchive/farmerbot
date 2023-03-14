@@ -65,7 +65,9 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 			}
 		}
 		node.powerstate = .off
-		node.last_time_powerstate_changed = time.now()
+		if node.powerstate != .off {
+			node.last_time_powerstate_changed = time.now()
+		}
 		return false
 	}
 	// We got a response from ZOS: it is still online. If the powerstate is shutting down
@@ -80,8 +82,10 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 	} else {
 		d.logger.info("${data_manager_prefix} Node ${node.id} is ON.")
 	}
+	if node.powerstate != .on {
+		node.last_time_powerstate_changed = time.now()
+	}
 	node.powerstate = .on
-	node.last_time_powerstate_changed = time.now()
 	node.last_time_awake = time.now()
 	return true
 }

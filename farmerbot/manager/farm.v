@@ -53,6 +53,6 @@ fn (mut f FarmManager) data_set(mut action actions.Action) ! {
 
 fn (mut f FarmManager) get_version(mut job jobs.ActionJob) ! {
 	f.logger.info("${farm_manager_prefix} Executing job: GET_VERSION}")
-	f.logger.debug("${farm_manager_prefix} $job")
 	job.result.kwarg_add("version", system.version)
+	f.logger.debug("${farm_manager_prefix} Version is ${system.version}")
 }

@@ -11,6 +11,7 @@ import time
 
 const (
 	power_manager_prefix = "[POWERMANAGER]"
+	periodic_wakeup_duration = time.minute * 30
 )
 
 [heap]
@@ -92,7 +93,11 @@ fn (mut p PowerManager) power_management() {
  	} else {
  		unused_nodes := p.db.nodes.values().filter(it.powerstate == .on && it.is_unused())
  		// nodes with public config can't be shutdown
- 		nodes_allowed_to_shutdown := unused_nodes.filter(!it.public_config && !it.never_shutdown)
+		// Do not shutdown a node that just came up (give it some time)
+ 		nodes_allowed_to_shutdown := unused_nodes.filter(
+			!it.public_config && 
+			!it.never_shutdown && 
+			time.since(it.last_time_powerstate_changed) >= periodic_wakeup_duration)
 
  		if unused_nodes.len > 1 {
  			// shutdown a node if there is more then 1 unused node (aka keep at least one node online)
@@ -169,7 +174,6 @@ fn (mut p PowerManager) poweron(mut job jobs.ActionJob) ! {
 fn (mut p PowerManager) poweroff(mut job jobs.ActionJob) ! {
 	mut node := p.nodeid_from_args(&job)!
 	p.logger.info("${power_manager_prefix} Executing job: POWEROFF ${node.id}")
-	p.logger.debug("${power_manager_prefix} $job")
 
 	if node.powerstate == .shuttingdown ||
 		node.powerstate == .off {
