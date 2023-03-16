@@ -6,7 +6,6 @@ import freeflowuniverse.baobab.processor { error_code_to_message, RMBErrorCode}
 
 import threefoldtech.farmerbot.system
 
-
 import encoding.base64
 import flag
 import json
@@ -84,9 +83,6 @@ pub fn main() {
 		eprintln(err)
 	}
 	unauthorized(mut redis, u32(twinid), u32(twinidfarm), mut cl) or {
-		eprintln(err)
-	}
-	test(mut redis, u32(twinid), u32(twinidfarm), mut cl) or {
 		eprintln(err)
 	}
 }
