@@ -30,6 +30,7 @@ example node definition, description is optional
     sru:1024GB
     cru:16
     mru:32GB
+    certified:no
 
 !!farmerbot.nodemanager.define
     id:20
