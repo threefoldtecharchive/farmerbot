@@ -45,6 +45,10 @@ jobs:
           bash install.sh
           v main.v
 
+      - name: Documentation
+        run: |
+          bash doc.sh
+
       - name: Unit tests
         env: 
           VJOBS: 1
