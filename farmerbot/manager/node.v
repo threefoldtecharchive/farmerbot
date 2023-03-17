@@ -3,26 +3,24 @@ module manager
 import freeflowuniverse.baobab.actions
 import freeflowuniverse.baobab.client
 import freeflowuniverse.baobab.jobs
-import freeflowuniverse.crystallib.params { Params }
+import freeflowuniverse.crystallib.params
 import threefoldtech.farmerbot.system { Node }
-
 import log
 import time
 
 const (
-	node_manager_prefix = "[NODEMANAGER]"
+	node_manager_prefix = '[NODEMANAGER]'
 )
 
 [heap]
 pub struct NodeManager {
-	name string = "farmerbot.nodemanager"
-	
+	name string = 'farmerbot.nodemanager'
 pub mut:
-	client client.Client
-	db &system.DB
-	logger &log.Logger
+	client  client.Client
+	db      &system.DB
+	logger  &log.Logger
 	tfchain &system.ITfChain
-	zos &system.IZos
+	zos     &system.IZos
 }
 
 pub fn (mut n NodeManager) init(mut action actions.Action) ! {
@@ -38,57 +36,56 @@ pub fn (mut n NodeManager) execute(mut job jobs.ActionJob) ! {
 }
 
 pub fn (mut n NodeManager) update() {
-	
 }
 
 fn (mut n NodeManager) data_set(mut action actions.Action) ! {
-	n.logger.info("${node_manager_prefix} Executing action: DATA_SET")
-	n.logger.debug("${node_manager_prefix} $action")
+	n.logger.info('${manager.node_manager_prefix} Executing action: DATA_SET')
+	n.logger.debug('${manager.node_manager_prefix} ${action}')
 
-	twinid := action.params.get_u32("twinid")!
-	cpu_overprovision := action.params.get_u8_default("cpuoverprovision", 1)!
+	twinid := action.params.get_u32('twinid')!
+	cpu_overprovision := action.params.get_u8_default('cpuoverprovision', 1)!
 	if cpu_overprovision < 1 || cpu_overprovision > 4 {
-		return error("cpuoverprovision should be a value between 1 and 4")
+		return error('cpuoverprovision should be a value between 1 and 4')
 	}
-	mut node := system.Node {
-		id: action.params.get_u32("id")!
+	mut node := Node{
+		id: action.params.get_u32('id')!
 		twinid: twinid
-		description: action.params.get_default("description", "")!
-		resources: system.ConsumableResources {
+		description: action.params.get_default('description', '')!
+		resources: system.ConsumableResources{
 			overprovision_cpu: cpu_overprovision
-			total: system.Capacity {
-				cru: action.params.get_u64_default("cru", 0)!
-				sru: action.params.get_resource_in_bytes_default("sru", 0)!
-				mru: action.params.get_resource_in_bytes_default("mru", 0)!
-				hru: action.params.get_resource_in_bytes_default("hru", 0)!
+			total: system.Capacity{
+				cru: action.params.get_u64_default('cru', 0)!
+				sru: action.params.get_resource_in_bytes_default('sru', 0)!
+				mru: action.params.get_resource_in_bytes_default('mru', 0)!
+				hru: action.params.get_resource_in_bytes_default('hru', 0)!
 			}
 		}
-		public_config: action.params.get_default_false("public_config")
-		dedicated: action.params.get_default_false("dedicated")
-		certified: action.params.get_default_false("certified")
+		public_config: action.params.get_default_false('public_config')
+		dedicated: action.params.get_default_false('dedicated')
+		certified: action.params.get_default_false('certified')
 		powerstate: .on
-		never_shutdown: action.params.get_default_false("never_shutdown")
+		never_shutdown: action.params.get_default_false('never_shutdown')
 	}
 
 	n.db.nodes[node.id] = &node
 }
 
 fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
-	n.logger.info("${node_manager_prefix} Executing job: FIND_NODE")
+	n.logger.info('${manager.node_manager_prefix} Executing job: FIND_NODE')
 
-	certified := job.args.get_default_false("certified")
-	public_config := job.args.get_default_false("public_config")
-	public_ips := job.args.get_u32_default("public_ips", 0)!
-	dedicated := job.args.get_default_false("dedicated")
-	node_exclude := job.args.get_list_u32("node_exclude")!
-	required_capacity := system.Capacity {
-		hru: job.args.get_resource_in_bytes_default("required_hru", 0)!
-		sru: job.args.get_resource_in_bytes_default("required_sru", 0)!
-		mru: job.args.get_resource_in_bytes_default("required_mru", 0)!
-		cru: job.args.get_u64_default("required_cru", 0)!
+	certified := job.args.get_default_false('certified')
+	public_config := job.args.get_default_false('public_config')
+	public_ips := job.args.get_u32_default('public_ips', 0)!
+	dedicated := job.args.get_default_false('dedicated')
+	node_exclude := job.args.get_list_u32('node_exclude')!
+	required_capacity := system.Capacity{
+		hru: job.args.get_resource_in_bytes_default('required_hru', 0)!
+		sru: job.args.get_resource_in_bytes_default('required_sru', 0)!
+		mru: job.args.get_resource_in_bytes_default('required_mru', 0)!
+		cru: job.args.get_u64_default('required_cru', 0)!
 	}
-	
-	n.logger.debug("${node_manager_prefix} Requirements:\ncertified:${certified}\npublic_config:${public_config}\npublic_ips:${public_ips}\ndedicated:${dedicated}\nnode_exclude:${node_exclude}\nrequired_capacity:${required_capacity}")
+
+	n.logger.debug('${manager.node_manager_prefix} Requirements:\ncertified:${certified}\npublic_config:${public_config}\npublic_ips:${public_ips}\ndedicated:${dedicated}\nnode_exclude:${node_exclude}\nrequired_capacity:${required_capacity}')
 
 	if public_ips > 0 {
 		mut public_ips_used_by_nodes := u64(0)
@@ -96,11 +93,11 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 			public_ips_used_by_nodes += node.public_ips_used
 		}
 		if public_ips_used_by_nodes + public_ips > n.db.farm.public_ips {
-			return error("Not enough public ips available")
+			return error('Not enough public ips available')
 		}
 	}
 
-	mut possible_nodes := []&Node {}
+	mut possible_nodes := []&Node{}
 	for node in n.db.nodes.values() {
 		if certified && !node.certified {
 			continue
@@ -130,23 +127,23 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	}
 
 	// Sort the nodes on power state (the ones that are ON first then wakingup, off, shuttingdown)
-	possible_nodes.sort_with_compare(fn (a &&system.Node, b &&system.Node) int {
-         if a.powerstate == b.powerstate {
-             return 0
-         } else if u8(a.powerstate) < u8(b.powerstate) {
-             return -1
-         } else {
-             return 1
-        }
-    })
+	possible_nodes.sort_with_compare(fn (a &&Node, b &&Node) int {
+		if a.powerstate == b.powerstate {
+			return 0
+		} else if u8(a.powerstate) < u8(b.powerstate) {
+			return -1
+		} else {
+			return 1
+		}
+	})
 
 	if possible_nodes.len == 0 {
-		return error("Could not find a suitable node")
+		return error('Could not find a suitable node')
 	}
 
 	mut node := possible_nodes[0]
-	n.logger.debug("${node_manager_prefix} Found a node: ${node}")
-	
+	n.logger.debug('${manager.node_manager_prefix} Found a node: ${node}')
+
 	// claim the resources until next update of the data
 	// add a timeout (30 minutes)
 	node.timeout_claimed_resources = time.now().add(time.minute * 30)
@@ -162,14 +159,15 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 		node.public_ips_used += public_ips
 	}
 
-	job.result.kwarg_add("nodeid", "${node.id}")
+	job.result.kwarg_add('nodeid', '${node.id}')
 
 	// power on the node if it is down or if it is shutting down
 	if node.powerstate == system.PowerState.off || node.powerstate == system.PowerState.shuttingdown {
 		_ := n.client.job_new_schedule(
-			twinid: n.client.twinid,
-			action: system.job_power_on,
-			args: job.result,
-			actionsource: system.job_node_find)!
+			twinid: n.client.twinid
+			action: system.job_power_on
+			args: job.result
+			actionsource: system.job_node_find
+		)!
 	}
 }

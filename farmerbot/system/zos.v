@@ -1,7 +1,6 @@
 module system
 
 import freeflowuniverse.crystallib.redisclient
-
 import encoding.base64
 import json
 import rand
@@ -16,14 +15,14 @@ pub mut:
 	exp u64
 	dat string
 	dst []u32
-    ret string
+	ret string
 	now u64
 	shm string
 }
 
 pub struct RmbError {
 pub mut:
-    code int
+	code    int
 	message string
 }
 
@@ -40,26 +39,26 @@ pub mut:
 
 pub struct ZosResources {
 pub mut:
-	cru u64
-	sru u64
-	hru u64
-	mru u64
+	cru   u64
+	sru   u64
+	hru   u64
+	mru   u64
 	ipv4u u64
 }
 
 pub struct ZosResourcesStatistics {
 pub mut:
-	total ZosResources
-	used ZosResources
+	total  ZosResources
+	used   ZosResources
 	system ZosResources
 }
 
 pub struct ZosPool {
 pub mut:
-    name string
-	pool_type string [json: "type"]
-	size int
-	used int
+	name      string
+	pool_type string [json: 'type']
+	size      int
+	used      int
 }
 
 pub interface IZos {
@@ -83,14 +82,14 @@ mut:
 }
 
 fn (mut z ZosRMBPeer) rmb_client_request(cmd string, dst u32) !RmbResponse {
-	msg := RmbMessage {
-			ver: 1
-			cmd: cmd
-			exp: 5
-			dat: base64.encode_str("")
-			dst: [dst]
-			ret: rand.uuid_v4()
-			now: u64(time.now().unix_time())
+	msg := RmbMessage{
+		ver: 1
+		cmd: cmd
+		exp: 5
+		dat: base64.encode_str('')
+		dst: [dst]
+		ret: rand.uuid_v4()
+		now: u64(time.now().unix_time())
 	}
 	request := json.encode_pretty(msg)
 	z.redis.lpush('msgbus.system.local', request)!
@@ -100,42 +99,42 @@ fn (mut z ZosRMBPeer) rmb_client_request(cmd string, dst u32) !RmbResponse {
 }
 
 pub fn (mut z ZosRMBPeer) zos_has_public_config(dst u32) !bool {
-	response := z.rmb_client_request("zos.network.public_config_get", dst)!
-	if response.err.message != "" {
+	response := z.rmb_client_request('zos.network.public_config_get', dst)!
+	if response.err.message != '' {
 		return false
 	}
-	return true 
+	return true
 }
 
 pub fn (mut z ZosRMBPeer) get_zos_statistics(dst u32) !ZosResourcesStatistics {
-	response := z.rmb_client_request("zos.statistics.get", dst)!
-	if response.err.message != "" {
-		return error("${response.err.message}")
+	response := z.rmb_client_request('zos.statistics.get', dst)!
+	if response.err.message != '' {
+		return error('${response.err.message}')
 	}
 	return json.decode(ZosResourcesStatistics, base64.decode_str(response.dat))!
 }
 
 pub fn (mut z ZosRMBPeer) get_zos_system_version(dst u32) !string {
-	response := z.rmb_client_request("zos.system.version", dst)!
-	if response.err.message != "" {
-		return error("${response.err.message}")
+	response := z.rmb_client_request('zos.system.version', dst)!
+	if response.err.message != '' {
+		return error('${response.err.message}')
 	}
 	return base64.decode_str(response.dat)
 }
 
 pub fn (mut z ZosRMBPeer) get_zos_wg_ports(dst u32) ![]u16 {
-	response := z.rmb_client_request("zos.network.list_wg_ports", dst)!
-	if response.err.message != "" {
-		return error("${response.err.message}")
+	response := z.rmb_client_request('zos.network.list_wg_ports', dst)!
+	if response.err.message != '' {
+		return error('${response.err.message}')
 	}
 	return json.decode([]u16, base64.decode_str(response.dat))
 }
 
 pub fn (mut z ZosRMBPeer) get_storage_pools(dst u32) ![]ZosPool {
-	response := z.rmb_client_request("zos.storage.pools", dst)!
+	response := z.rmb_client_request('zos.storage.pools', dst)!
 
-	if response.err.message != "" {
-		return error("${response.err.message}")
+	if response.err.message != '' {
+		return error('${response.err.message}')
 	}
 	return json.decode([]ZosPool, base64.decode_str(response.dat))
 }
