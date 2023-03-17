@@ -1,6 +1,12 @@
-FROM thevlang/vlang:latest as build
+FROM thevlang/vlang:ubuntu-build AS build
 
-RUN apt-get update && apt-get install -y git
+WORKDIR /opt/vlang
+RUN git clone https://github.com/vlang/v /opt/vlang && make && v -version
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    clang llvm-dev tcc && \
+    apt-get clean && rm -rf /var/cache/apt/archives/* && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /baobab
 RUN git clone -b development https://github.com/freeflowuniverse/baobab.git .
@@ -13,7 +19,7 @@ RUN bash install.sh
 WORKDIR /farmerbot
 COPY . .
 RUN bash install.sh
-RUN v main.v
+RUN v -prod main.v
 
 # ===== SECOND STAGE ======
 
