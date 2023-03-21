@@ -29,8 +29,9 @@ fn unauthorized(mut redis redisclient.Redis, twinid u32, twinidfarm u32, mut cl 
 	}
 	request := json.encode_pretty(msg)
 	redis.lpush('msgbus.system.local', request)!
-	response_json := redis.blpop(msg.ret, int(msg.exp))!
-	response := json.decode(system.RmbResponse, response_json)!
+	response_json := redis.blpop([msg.ret], int(msg.exp))!
+	assert response_json.len == 2
+	response := json.decode(system.RmbResponse, response_json[1])!
 	println("Response: ${response}")
 	assert response.err.code == int(RMBErrorCode.unauthorized)
 	assert response.err.message == error_code_to_message(RMBErrorCode.unauthorized)
@@ -52,8 +53,9 @@ fn wrong_json_job(mut redis redisclient.Redis, twinid u32, twinidfarm u32, mut c
 	}
 	request := json.encode_pretty(msg)
 	redis.lpush('msgbus.system.local', request)!
-	response_json := redis.blpop(msg.ret, int(msg.exp))!
-	response := json.decode(system.RmbResponse, response_json)!
+	response_json := redis.blpop([msg.ret], int(msg.exp))!
+	assert response_json.len == 2
+	response := json.decode(system.RmbResponse, response_json[1])!
 	println("Response: ${response}")
 	assert response.err.code == int(RMBErrorCode.failed_decoding_payload_to_job)
 	assert response.err.message == error_code_to_message(RMBErrorCode.failed_decoding_payload_to_job)

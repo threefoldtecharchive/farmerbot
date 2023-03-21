@@ -44,8 +44,9 @@ fn find_job(mut redis redisclient.Redis, twinid u32, twinidfarm u32, mut cl clie
 	}
 	request := json.encode_pretty(msg)
 	redis.lpush('msgbus.system.local', request)!
-	response_json := redis.blpop(msg.ret, int(msg.exp))!
-	response := json.decode(system.RmbResponse, response_json)!
+	response_json := redis.blpop([msg.ret], int(msg.exp))!
+	assert response_json.len == 2
+	response := json.decode(system.RmbResponse, response_json[1])!
 	job_response := jobs.json_load(base64.decode_str(response.dat))!
 	println("Status: ${job_response.state}")
 	println("Err: ${job_response.error}")

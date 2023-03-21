@@ -26,7 +26,7 @@ fn do(mut redis redisclient.Redis, cmd string, src u32, dst u32) ! {
 	}
 	request := json.encode_pretty(msg)
 	redis.lpush('msgbus.system.local', request)!
-	response_json := redis.blpop(msg.ret, 10)!
+	response_json := redis.blpop([msg.ret], 10)!
 	println(response_json)
 }
 

@@ -39,8 +39,9 @@ fn get_version(mut redis redisclient.Redis, twinid u32, twinidfarm u32, mut cl c
 	println("${j.json_dump()}")
 	println("${base64.encode_str(j.json_dump())}")
 	redis.lpush('msgbus.system.local', request)!
-	response_json := redis.blpop(msg.ret, int(msg.exp))!
-	response := json.decode(system.RmbResponse, response_json)!
+	response_json := redis.blpop([msg.ret], msg.exp)!
+	assert response_json.len == 2
+	response := json.decode(system.RmbResponse, response_json[1])!
 	assert response.err.message == ""
 	job_response := jobs.json_load(base64.decode_str(response.dat))!
 	println("Status: ${job_response.state}")
