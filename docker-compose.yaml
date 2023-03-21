@@ -1,6 +1,6 @@
 services:
   farmerbot:
-    image: ghcr.io/threefoldtech/farmerbot:0.1.0-rc12
+    image: ghcr.io/threefoldtech/farmerbot:0.1.0-rc13
     depends_on:
       redis:
         condition: service_healthy
