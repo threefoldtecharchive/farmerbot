@@ -131,7 +131,7 @@ The powermanagement behavior is configurable through the following attributes (t
 
 Example:
 ```
-!!farmerbot.powermanager.define
+!!farmerbot.powermanager.configure
     wake_up_threshold:75
     periodic_wakeup:8:30AM
 ```
@@ -161,7 +161,7 @@ Farm configuration
     public_ips:2
 
 Power configuration
-!!farmerbot.powermanager.define
+!!farmerbot.powermanager.configure
     wake_up_threshold:75
     periodic_wakeup:8:30AM
 ```
