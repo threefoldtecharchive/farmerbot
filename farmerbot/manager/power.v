@@ -96,17 +96,17 @@ fn (mut p PowerManager) power_management() {
 			}
 		}
 	} else {
-		unused_nodes := p.db.nodes.values().filter(it.powerstate == .on && it.is_unused())
+		nodes_on := p.db.nodes.values().filter(it.powerstate == .on)
 		// nodes with public config can't be shutdown
 		// Do not shutdown a node that just came up (give it some time)
-		nodes_allowed_to_shutdown := unused_nodes.filter(!it.public_config && !it.never_shutdown
+		nodes_allowed_to_shutdown := nodes_on.filter(it.is_unused() && !it.public_config && !it.never_shutdown
 			&& time.since(it.last_time_powerstate_changed) >= manager.periodic_wakeup_duration)
 
-		if unused_nodes.len > 1 {
+		if nodes_on.len > 1 {
 			// shutdown a node if there is more then 1 unused node (aka keep at least one node online)
 			mut new_used_resources := used_resources
 			mut new_total_resources := total_resources
-			mut nodes_left_online := unused_nodes.len
+			mut nodes_left_online := nodes_on.len
 			for node in nodes_allowed_to_shutdown {
 				if nodes_left_online == 1 {
 					break

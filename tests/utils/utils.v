@@ -99,6 +99,7 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
             hru: 0
 		}
 	}
+	
 	f.processor.reset() or {
 		return error("Failed resetting processor: $err")
 	}
