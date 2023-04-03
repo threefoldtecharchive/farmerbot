@@ -4,9 +4,10 @@ import math { ceil }
 import time { Duration, Time }
 
 pub const (
-	default_wake_up_threshold = 80
-	min_wake_up_threshold     = 50
-	max_wake_up_threshold     = 80
+	default_wakeup_threshold = 80
+	default_periodic_wakeup_limit = 1
+	min_wakeup_threshold     = 50
+	max_wakeup_threshold     = 80
 )
 
 pub enum FarmerbotState as u8 {
@@ -121,9 +122,10 @@ fn (a Capacity) - (b Capacity) Capacity {
 [heap]
 pub struct DB {
 pub mut:
-	wake_up_threshold     u8 = system.default_wake_up_threshold
+	wake_up_threshold     u8 = system.default_wakeup_threshold
 	periodic_wakeup_start Duration
 	periodic_wakeup_end   Duration
+	periodic_wakeup_limit u8 = system.default_periodic_wakeup_limit
 	nodes                 map[u32]&Node
 	farm                  &Farm
 }

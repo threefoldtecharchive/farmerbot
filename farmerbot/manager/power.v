@@ -57,6 +57,7 @@ fn (mut p PowerManager) periodic_wakeup() {
 	now := time.now()
 	today := time.new_time(year: now.year, month: now.month, day: now.day)
 	periodic_wakeup_start := today.add(p.db.periodic_wakeup_start)
+	mut amount_wakeup_calls := 0
 	if periodic_wakeup_start <= now {
 		for mut node in p.db.nodes.values().filter(it.powerstate == .off) {
 			if node.last_time_awake < periodic_wakeup_start {
@@ -65,8 +66,11 @@ fn (mut p PowerManager) periodic_wakeup() {
 					p.logger.error('${manager.power_manager_prefix} Job to power on node ${node.id} failed: ${err}')
 					continue
 				}
-				// reboot one at a time others will be rebooted 5 min later
-				break
+				amount_wakeup_calls += 1
+				if amount_wakeup_calls >= p.db.periodic_wakeup_limit {
+					// reboot X nodes at a time others will be rebooted 5 min later
+					break
+				}
 			}
 		}
 	}
@@ -209,19 +213,26 @@ fn (mut p PowerManager) schedule_power_job(nodeid u32, powerstate system.PowerSt
 }
 
 fn (mut p PowerManager) configure(mut action actions.Action) ! {
-	mut wake_up_threshold := action.params.get_u8_default('wake_up_threshold', system.default_wake_up_threshold)!
-	if wake_up_threshold < system.min_wake_up_threshold
-		|| wake_up_threshold > system.max_wake_up_threshold {
-		wake_up_threshold = if wake_up_threshold < system.min_wake_up_threshold {
-			u8(system.min_wake_up_threshold)
+	mut wake_up_threshold := action.params.get_u8_default('wake_up_threshold', system.default_wakeup_threshold)!
+	if wake_up_threshold < system.min_wakeup_threshold
+		|| wake_up_threshold > system.max_wakeup_threshold {
+		wake_up_threshold = if wake_up_threshold < system.min_wakeup_threshold {
+			u8(system.min_wakeup_threshold)
 		} else {
-			u8(system.max_wake_up_threshold)
+			u8(system.max_wakeup_threshold)
 		}
-		p.logger.warn('${manager.power_manager_prefix} The setting wake_up_threshold should be in the range [${system.min_wake_up_threshold}, ${system.max_wake_up_threshold}]')
+		p.logger.warn('${manager.power_manager_prefix} The setting wake_up_threshold should be in the range [${system.min_wakeup_threshold}, ${system.max_wakeup_threshold}]')
 	}
 
 	periodic_wakeup_start := action.params.get_time_default('periodic_wakeup', time.hour * time.now().hour)!
 
+	mut periodic_wakeup_limit := action.params.get_u8_default('periodic_wakeup_limit', system.default_periodic_wakeup_limit)!
+	if periodic_wakeup_limit == 0 {
+		periodic_wakeup_limit = system.default_periodic_wakeup_limit
+		p.logger.warn('${manager.power_manager_prefix} The setting periodic_wakeup_limit should be greater then 0!')
+	}
+
 	p.db.wake_up_threshold = wake_up_threshold
 	p.db.periodic_wakeup_start = periodic_wakeup_start
+	p.db.periodic_wakeup_limit = periodic_wakeup_limit
 }

@@ -128,12 +128,14 @@ Example:
 The powermanagement behavior is configurable through the following attributes (they are optional):
 - wake_up_threshold => a value between 50 and 80 defining the threshold at which nodes will be powered on or off. If the usage percentage (total used resources devided by the total amount of resources) is greater then the threshold a new node will be powered on. In the other case the farmerbot will try to power off nodes if possible.
 - periodic_wakeup => the time at which the periodic wakeups (powering on a node that is off) should happen. The offline nodes will be powered on sequentially with an interval of 5 minutes starting at the time defined in periodic_wakeup.
+- periodic_wakeup_limit => by default only one node will be woken up every 5 minutes during a periodic wakeup. You can change that behavior by setting the periodic_wakeup_limit setting. 
 
 Example:
 ```
 !!farmerbot.powermanager.configure
     wake_up_threshold:75
     periodic_wakeup:8:30AM
+    periodic_wakeup_limit:2
 ```
 
 ### Example of a configuration file
