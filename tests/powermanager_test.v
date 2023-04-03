@@ -354,7 +354,7 @@ fn test_power_management_resource_usage_is_perfect() {
 }
 
 // Test power management when usage is too low and we can power off 
-// a node (at least two empty)
+// a node
 fn test_power_management_resource_usage_too_low() {
 	run_test("test_power_management_resource_usage_too_low",
 		fn (mut farmerbot Farmerbot, mut c Client) ! {
@@ -376,6 +376,34 @@ fn test_power_management_resource_usage_too_low() {
 			// assert
 			assert farmerbot.db.get_node(5)!.powerstate == .shuttingdown
 			assert farmerbot.db.get_node(8)!.powerstate == .on
+		}
+	)!
+}
+
+
+// Test power management when usage is too low and we can power off 
+// two nodes
+fn test_power_management_resource_usage_too_low_2_shutdown_2_nodes() {
+	run_test("test_power_management_resource_usage_too_low_2_shutdown_2_nodes",
+		fn (mut farmerbot Farmerbot, mut c Client) ! {
+			// prepare
+			farmerbot.db.wake_up_threshold = 80
+			for mut node in farmerbot.db.nodes.values() {
+				node.last_time_awake = time.now()
+				node.powerstate = .off
+			}
+			mut node_3 := farmerbot.db.get_node(3)!
+			node_3.powerstate = .on
+			put_usage_to_x_procent(mut node_3, 20)
+			farmerbot.db.get_node(5)!.powerstate = .on
+			farmerbot.db.get_node(8)!.powerstate = .on
+
+			// act
+			powermanager_update(mut farmerbot)!
+
+			// assert
+			assert farmerbot.db.get_node(5)!.powerstate == .shuttingdown
+			assert farmerbot.db.get_node(8)!.powerstate == .shuttingdown
 		}
 	)!
 }
@@ -408,25 +436,23 @@ fn test_power_management_resource_usage_too_low_nodes_that_cant_shutdown() {
 }
 
 // Test power management when usage is too low but we have to keep at least one
-// empty node on
-fn test_power_management_resource_usage_too_low_keep_at_least_one_empty_node_on() {
-	run_test("test_power_management_resource_usage_too_low_keep_at_least_one_empty_node_on",
+// node on
+fn test_power_management_resource_usage_too_low_keep_at_least_one_node_on() {
+	run_test("test_power_management_resource_usage_too_low_keep_at_least_one_node_on",
 		fn (mut farmerbot Farmerbot, mut c Client) ! {
 			// prepare
-			farmerbot.db.wake_up_threshold = 80
 			for mut node in farmerbot.db.nodes.values() {
 				node.last_time_awake = time.now()
 				node.powerstate = .off
 			}
-			mut node_3 := farmerbot.db.get_node(3)!
-			node_3.powerstate = .on
-			put_usage_to_x_procent(mut node_3, 60)
+			farmerbot.db.get_node(3)!.powerstate = .on
 			farmerbot.db.get_node(5)!.powerstate = .on
 
 			// act
 			powermanager_update(mut farmerbot)!
 
 			// assert
+			assert farmerbot.db.get_node(3)!.powerstate == .shuttingdown
 			assert farmerbot.db.get_node(5)!.powerstate == .on
 		}
 	)!
