@@ -26,6 +26,8 @@ pub mut:
 pub fn (mut n NodeManager) init(mut action actions.Action) ! {
 	if action.name == system.action_node_define {
 		n.data_set(mut action)!
+	} else {
+		n.logger.warn("${node_manager_prefix} Unknown action ${action.name}")
 	}
 }
 

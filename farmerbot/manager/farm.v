@@ -24,6 +24,8 @@ mut:
 pub fn (mut f FarmManager) init(mut action actions.Action) ! {
 	if action.name == system.action_farm_define {
 		f.data_set(mut action)!
+	} else {
+		f.logger.warn("${farm_manager_prefix} Unknown action ${action.name}")
 	}
 }
 

@@ -27,6 +27,8 @@ mut:
 pub fn (mut p PowerManager) init(mut action actions.Action) ! {
 	if action.name == system.action_power_configure {
 		p.configure(mut action)!
+	} else {
+		p.logger.warn("${power_manager_prefix} Unknown action ${action.name}")
 	}
 }
 

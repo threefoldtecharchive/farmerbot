@@ -24,6 +24,7 @@ mut:
 }
 
 pub fn (mut d DataManager) init(mut action actions.Action) ! {
+	d.logger.warn("${data_manager_prefix} Unknown action ${action.name}")
 }
 
 pub fn (mut d DataManager) execute(mut job jobs.ActionJob) ! {
