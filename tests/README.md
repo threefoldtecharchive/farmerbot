@@ -26,28 +26,29 @@ Structuring tests with these 3 parts will result in tests that easy to read, tha
 
 ```
 fn test_find_node_that_is_on_first() {
-	mut testenvironment := TestEnvironment{}
-	testenvironment.run(fn (mut farmerbot Farmerbot, mut client Client) ! {
-		// prepare
-		farmerbot.db.nodes[3].powerstate = .off
-		mut args := Params {}
-		// can fit on node with id 3 but it is offline so use 5
-		add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
+	run_test("test_find_node_that_is_on_first", 
+		fn (mut farmerbot Farmerbot, mut client Client) ! {
+			// prepare
+			farmerbot.db.nodes[3].powerstate = .off
+			mut args := Params {}
+			// can fit on node with id 3 but it is offline so use 5
+			add_required_resources(mut args, "500GB", "100GB", "4GB", "2")
 
-		// act
-		mut job := client.job_new_wait(
-			twinid: 162
-			action: system.job_node_find
-			args: args
-			actionsource: ""
-		) or {
-			return error("failed to create and wait for job")
+			// act
+			mut job := client.job_new_wait(
+				twinid: 162
+				action: system.job_node_find
+				args: args
+				actionsource: ""
+			) or {
+				return error("failed to create and wait for job")
+			}
+
+			//assert
+			ensure_no_error(&job)!
+			ensure_result_contains_u32(&job, "nodeid", 5)!
 		}
-
-		//assert
-		ensure_no_error(&job)!
-		ensure_result_contains_u32(&job, "nodeid", 5)!
-	})!
+	)!
 }
 ```
 
