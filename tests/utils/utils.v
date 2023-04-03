@@ -103,12 +103,13 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 	f.processor.reset() or {
 		return error("Failed resetting processor: $err")
 	}
-	c.reset() or {
-		return error("Failed resetting client: $err")
-	}
 
 	t_ar := spawn (&f.actionrunner).run()
 	t_pr := spawn (&f.processor).run()
+
+	c.reset() or {
+		return error("Failed resetting client: $err")
+	}
 
 	test(mut f, mut c) or {
 		f.processor.running = false
