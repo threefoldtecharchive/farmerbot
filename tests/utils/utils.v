@@ -64,6 +64,8 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 		return error("Failed creating client: $err")
 	}
 
+	c.redis.flushall()!
+
 	os.mkdir_all("/tmp/farmerbot", os.MkdirParams{})!
 
 	os.setenv("FARMERBOT_LOG_OUTPUT", "/tmp/farmerbot/${name}.log", true)
@@ -99,6 +101,7 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
             hru: 0
 		}
 	}
+	
 	f.processor.reset() or {
 		return error("Failed resetting processor: $err")
 	}
