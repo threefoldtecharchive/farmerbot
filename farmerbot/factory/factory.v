@@ -1,6 +1,5 @@
 module factory
 
-import freeflowuniverse.baobab
 import freeflowuniverse.baobab.actionrunner
 import freeflowuniverse.baobab.actions
 import freeflowuniverse.baobab.client
