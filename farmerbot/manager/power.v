@@ -129,6 +129,10 @@ fn (mut p PowerManager) resource_usage_too_high(used_resources u64, total_resour
 				// we need to keep the resource percentage lower then the threshold
 				p.logger.info('${manager.power_manager_prefix} Resource usage too low: ${new_resource_usage}. Turning off unused node ${node.id}')
 				p.schedule_power_job(node.id, .off) or {
+					// Something went wrong so undo calculation
+					nodes_left_online += 1 
+					new_used_resources += node.resources.used.hru + node.resources.used.sru + node.resources.used.mru + node.resources.used.cru
+					new_total_resources += node.resources.total.hru + node.resources.total.sru + node.resources.total.mru + node.resources.total.cru
 					p.logger.error('${manager.power_manager_prefix} Job to power off node ${node.id} failed: ${err}')
 				}
 			}

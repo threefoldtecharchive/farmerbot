@@ -644,6 +644,32 @@ fn test_power_management_after_periodic_wakeup_too_early_to_shutdown() {
 	)!
 }
 
+// Test power management: second node shutdown fails on tfchain side so we ignore that case in our calculation.  
+fn test_power_management_second_shutdown_fails() {
+	run_test("test_power_management_second_shutdown_fails",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			for mut node in t.farmerbot.db.nodes.values() {
+				node.powerstate = .on
+				node.never_shutdown = false
+				node.public_config = false
+			}
+			t.tfchain_mock.mock_set_node_power = fn(node_id u32, state PowerState) ! {
+				if node_id == 5 {
+					return error("something failed on tfchain for node 3")
+				}
+			}
+
+			// act
+			powermanager_update(mut t.farmerbot)!
+
+			// assert
+			assert t.farmerbot.db.get_node(5)!.powerstate == .on
+			assert t.farmerbot.db.nodes.values().filter(it.powerstate == .shuttingdown).len == t.farmerbot.db.nodes.len - 1
+		}
+	)!
+}
+
 // Test power management: we only power off a node after 30 minutes after a periodic wake up to allow the node to 
 // report its uptime. Shutdown node where powerstate was changed 30 minutes or longer ago.
 fn test_power_management_after_periodic_wakeup_allowed_to_shutdown() {
@@ -667,6 +693,65 @@ fn test_power_management_after_periodic_wakeup_allowed_to_shutdown() {
 			assert t.farmerbot.db.get_node(3)!.powerstate == .on
 			assert t.farmerbot.db.get_node(5)!.powerstate == .shuttingdown
 			assert t.farmerbot.db.nodes.values().filter(it.powerstate == .off).len == t.farmerbot.db.nodes.len - 2
+		}
+	)!
+}
+
+// Test Power management and periodic wakeup together. We execute periodic wakeup for 2 nodes while the resource 
+// usage is too low. Result: nodes should wake up while we shutdown the nodes that are up except for one.
+fn test_periodic_wakeup_and_power_management_resource_usage_too_low() {
+	run_test("test_periodic_wakeup_and_power_management_resource_usage_too_low",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			now := time.now()
+			t.farmerbot.db.periodic_wakeup_limit = 2
+			for mut node in t.farmerbot.db.nodes.values() {
+				node.powerstate = .on
+				node.never_shutdown = false
+				node.public_config = false
+				node.last_time_powerstate_changed = now.add(time.hour * -1)
+			}
+			t.farmerbot.db.get_node(3)!.powerstate = .off
+			t.farmerbot.db.get_node(3)!.last_time_awake = now.add(time.hour * -24)
+			t.farmerbot.db.get_node(5)!.powerstate = .off
+			t.farmerbot.db.get_node(5)!.last_time_awake = now.add(time.hour * -24)
+
+			// act
+			powermanager_update(mut t.farmerbot)!
+
+			// assert
+			assert t.farmerbot.db.get_node(3)!.powerstate == .wakingup
+			assert t.farmerbot.db.get_node(5)!.powerstate == .wakingup
+			assert t.farmerbot.db.nodes.values().filter(it.powerstate == .shuttingdown).len == t.farmerbot.db.nodes.len - 3
+			assert t.farmerbot.db.nodes.values().filter(it.powerstate == .on).len == 1
+		}
+	)!
+}
+
+// Test Power management and periodic wakeup together. We execute periodic wakeup for 1 node while the resource 
+// usage is too high. Result: periodic wakeup fixes the lack of free resources.
+fn test_periodic_wakeup_and_power_management_resource_usage_too_high() {
+	run_test("test_periodic_wakeup_and_power_management_resource_usage_too_high",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			now := time.now()
+			t.farmerbot.db.periodic_wakeup_limit = 2
+			for mut node in t.farmerbot.db.nodes.values() {
+				node.powerstate = .on
+				put_usage_to_x_procent(mut node, 80)
+			}
+			t.farmerbot.db.get_node(3)!.powerstate = .off
+			t.farmerbot.db.get_node(3)!.last_time_awake = now.add(time.hour * -24)
+			t.farmerbot.db.get_node(5)!.powerstate = .off
+			t.farmerbot.db.get_node(5)!.last_time_awake = now.add(time.hour * -1)
+
+			// act
+			powermanager_update(mut t.farmerbot)!
+
+			// assert
+			assert t.farmerbot.db.get_node(3)!.powerstate == .wakingup
+			assert t.farmerbot.db.get_node(5)!.powerstate == .off
+			assert t.farmerbot.db.nodes.values().filter(it.powerstate == .on).len == t.farmerbot.db.nodes.len - 2
 		}
 	)!
 }

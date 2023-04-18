@@ -74,6 +74,7 @@ pub fn run_test(name string, test Test) ! {
 
 	os.setenv("FARMERBOT_LOG_OUTPUT", "/tmp/farmerbot/${name}.log", true)
 	os.setenv("FARMERBOT_LOG_LEVEL", "DEBUG", true)
+	os.setenv("FARMERBOT_LOG_CONSOLE", "FALSE", true)
 	
 	mut tfchain_mock := &TfChainMock {}
 	mut zos_mock := &ZosMock {}
