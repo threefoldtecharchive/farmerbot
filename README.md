@@ -66,13 +66,13 @@ Arguments:
 ## Running the farmerbot in production
 The farmerbot is shipped inside a [docker image](https://github.com/threefoldtech/farmerbot/pkgs/container/farmerbot) so that it is easy to run in a [docker environment](docker-compose.yaml). It requires some configuration written in a markdown file. This file should be located inside a folder called **config** in the directory of the docker compose file. The possible configuration will be discussed in this section. You should also create a **.env** file next to the docker compose file with the content shown below:
 ```
-MNEMONIC="<THE_MNEMONIC_OF_YOUR_FARM>"
+SECRET="MNEMONIC_OR_HEX_SECRET_OF_YOUR_FARM"
 NETWORK=dev
 RELAY=wss://relay.dev.grid.tf:443
 SUBSTRATE=wss://tfchain.dev.grid.tf:443
 ```
 
-Please modify the fields to what is required (network, relay, etc). Now to run the the farmerbot just run the following command (make sure to provide the mnemonic of the farm):
+Please modify the fields to what is required (network, relay, etc). Now to run the the farmerbot just run the following command (make sure to provide the mnemonic or the hex based secret of your farm):
 ```
 docker compose up
 ```

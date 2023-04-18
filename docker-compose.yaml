@@ -20,7 +20,7 @@ services:
       redis:
         condition: service_healthy
     entrypoint: /bin/sh -c
-    command: ["/usr/sbin/rmb-peer --redis redis://redis:6379 --mnemonics \"$MNEMONIC\" --relay $RELAY -s $SUBSTRATE -d"]
+    command: ["/usr/sbin/rmb-peer --redis redis://redis:6379 -m \"$SECRET\" --relay $RELAY -s $SUBSTRATE -d"]
 
   grid3_client:
     image: ghcr.io/threefoldtech/grid3_client_ts:2.0.0-rc11
@@ -29,7 +29,7 @@ services:
       redis:
         condition: service_healthy
     entrypoint: /bin/sh -c
-    command: ["echo \"{\\\"network\\\":\\\"$NETWORK\\\",\\\"mnemonic\\\":\\\"$MNEMONIC\\\",\\\"rmb_proxy\\\":false,\\\"storeSecret\\\":\\\"secret\\\",\\\"keypairType\\\":\\\"sr25519\\\"}\" > ~/config.json && yarn httpserver -c ~/config.json" ]
+    command: ["echo \"{\\\"network\\\":\\\"$NETWORK\\\",\\\"mnemonic\\\":\\\"$SECRET\\\",\\\"rmb_proxy\\\":false,\\\"storeSecret\\\":\\\"secret\\\",\\\"keypairType\\\":\\\"sr25519\\\"}\" > ~/config.json && yarn httpserver -c ~/config.json" ]
     ports:
       - '3000'
     healthcheck:
