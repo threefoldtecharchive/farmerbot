@@ -1,7 +1,7 @@
 module main
 
 import utils { 
-	ensure_no_error, ensure_result_contains_string, run_test 
+	ensure_no_error, ensure_result_contains_string, run_test, TestEnvironment
 }
 import freeflowuniverse.baobab.client { Client }
 import freeflowuniverse.crystallib.params { Params }
@@ -10,11 +10,11 @@ import threefoldtech.farmerbot.system
 
 fn test_get_version() {
 	run_test("test_get_version", 
-		fn (mut farmerbot Farmerbot, mut c Client) ! {
+		fn (mut t TestEnvironment) ! {
 			// prepare
 			// act
-			mut job := c.job_new_wait(
-				twinid: c.twinid
+			mut job := t.client.job_new_wait(
+				twinid: t.client.twinid
 				action: system.job_farm_version
 				args: Params {}
 				actionsource: ""

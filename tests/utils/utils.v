@@ -17,10 +17,15 @@ const (
 	testpath = os.dir(@FILE) + '/../../example_data'
 )
 
+pub type MockSetNodePower = fn(node_id u32, state PowerState)!
+
 // TODO add some mock code
 pub struct TfChainMock {
+pub mut:
+	mock_set_node_power MockSetNodePower = fn(node_id u32, state PowerState) ! {}
 }
 pub fn (mut t TfChainMock) set_node_power(node_id u32, state PowerState) ! {
+	t.mock_set_node_power(node_id, state)!
 }
 pub fn (mut t TfChainMock) 	active_rent_contract_for_node(nodeid u32) !u64 {
 	return 0
@@ -45,17 +50,19 @@ pub fn (mut z ZosMock) get_storage_pools(dst u32) ![]ZosPool {
 	return []
 }
 
-pub type Test = fn (mut farmerbot Farmerbot, mut client Client) !
+pub type Test = fn (mut TestEnvironment) !
 
 [heap]
+[noinit]
 pub struct TestEnvironment {
 pub mut:
+	client &Client = &Client{}
+	farmerbot &Farmerbot
 	tfchain_mock &TfChainMock = &TfChainMock {}
 	zos_mock &ZosMock = &ZosMock {}
 }
 
-pub fn (mut t TestEnvironment) run(name string, test Test) ! {
-
+pub fn run_test(name string, test Test) ! {
 	mut redis_address := os.getenv("FARMERBOT_REDIS_ADDRESS")
 	if redis_address == "" {
 		redis_address = "localhost:6379"
@@ -63,14 +70,13 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 	mut c := client.new(redis_address) or { 
 		return error("Failed creating client: $err")
 	}
-
 	os.mkdir_all("/tmp/farmerbot", os.MkdirParams{})!
 
 	os.setenv("FARMERBOT_LOG_OUTPUT", "/tmp/farmerbot/${name}.log", true)
 	os.setenv("FARMERBOT_LOG_LEVEL", "DEBUG", true)
 	
-	t.tfchain_mock = &TfChainMock {}
-	t.zos_mock = &ZosMock {}
+	mut tfchain_mock := &TfChainMock {}
+	mut zos_mock := &ZosMock {}
 	mut logger := system.logger()
 	mut f := &Farmerbot {
 		redis_address: redis_address
@@ -79,8 +85,8 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 			farm: &system.Farm {}
 		}
 		logger: logger
-		tfchain: t.tfchain_mock
-		zos: t.zos_mock
+		tfchain: tfchain_mock
+		zos: zos_mock
 		processor: processor.new(redis_address, logger)!
 		actionrunner: actionrunner.ActionRunner {
 			client: &Client {}
@@ -111,7 +117,13 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 		return error("Failed resetting client: $err")
 	}
 
-	test(mut f, mut c) or {
+	mut t := TestEnvironment{
+		client: &c
+		farmerbot: f
+		tfchain_mock: tfchain_mock
+		zos_mock: zos_mock
+	}
+	test(mut t) or {
 		f.processor.running = false
 		f.actionrunner.running = false
 		t_ar.wait()
@@ -123,11 +135,6 @@ pub fn (mut t TestEnvironment) run(name string, test Test) ! {
 	f.actionrunner.running = false
 	t_ar.wait()
 	t_pr.wait()
-}
-
-pub fn run_test(name string, test Test) ! {
-	mut testenvironment := TestEnvironment{}
-	testenvironment.run(name, test)!
 }
 
 pub fn powermanager_update(mut farmerbot Farmerbot) ! {
