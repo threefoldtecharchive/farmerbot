@@ -624,14 +624,16 @@ fn test_power_management_after_periodic_wakeup_too_early_to_shutdown() {
 	run_test("test_power_management_after_periodic_wakeup_too_early_to_shutdown",
 		fn (mut t TestEnvironment) ! {
 			// prepare
+			now := time.now()
+			t.farmerbot.db.periodic_wakeup_start = time.hour * now.hour
 			for mut node in t.farmerbot.db.nodes.values() {
 				node.powerstate = .off
-				node.last_time_awake = time.now()
+				node.last_time_awake = now
 			}
 			t.farmerbot.db.get_node(3)!.powerstate = .on
-			t.farmerbot.db.get_node(3)!.last_time_powerstate_changed = time.now()
+			t.farmerbot.db.get_node(3)!.last_time_powerstate_changed = now
 			t.farmerbot.db.get_node(5)!.powerstate = .on
-			t.farmerbot.db.get_node(5)!.last_time_powerstate_changed = time.now()
+			t.farmerbot.db.get_node(5)!.last_time_powerstate_changed = now
 
 			// act
 			powermanager_update(mut t.farmerbot)!
@@ -676,11 +678,12 @@ fn test_power_management_after_periodic_wakeup_allowed_to_shutdown() {
 	run_test("test_power_management_after_periodic_wakeup_allowed_to_shutdown",
 		fn (mut t TestEnvironment) ! {
 			// prepare
+			now := time.now()
+			t.farmerbot.db.periodic_wakeup_start = time.hour * now.hour
 			for mut node in t.farmerbot.db.nodes.values() {
 				node.powerstate = .off
-				node.last_time_awake = time.now()
+				node.last_time_awake = now
 			}
-			now := time.now()
 			t.farmerbot.db.get_node(3)!.powerstate = .on
 			t.farmerbot.db.get_node(3)!.last_time_powerstate_changed = now
 			t.farmerbot.db.get_node(5)!.powerstate = .on
@@ -704,6 +707,7 @@ fn test_periodic_wakeup_and_power_management_resource_usage_too_low() {
 		fn (mut t TestEnvironment) ! {
 			// prepare
 			now := time.now()
+			t.farmerbot.db.periodic_wakeup_start = time.hour * now.hour
 			t.farmerbot.db.periodic_wakeup_limit = 2
 			for mut node in t.farmerbot.db.nodes.values() {
 				node.powerstate = .on
@@ -735,6 +739,7 @@ fn test_periodic_wakeup_and_power_management_resource_usage_too_high() {
 		fn (mut t TestEnvironment) ! {
 			// prepare
 			now := time.now()
+			t.farmerbot.db.periodic_wakeup_start = time.hour * now.hour
 			t.farmerbot.db.periodic_wakeup_limit = 2
 			for mut node in t.farmerbot.db.nodes.values() {
 				node.powerstate = .on
@@ -743,7 +748,7 @@ fn test_periodic_wakeup_and_power_management_resource_usage_too_high() {
 			t.farmerbot.db.get_node(3)!.powerstate = .off
 			t.farmerbot.db.get_node(3)!.last_time_awake = now.add(time.hour * -24)
 			t.farmerbot.db.get_node(5)!.powerstate = .off
-			t.farmerbot.db.get_node(5)!.last_time_awake = now.add(time.hour * -1)
+			t.farmerbot.db.get_node(5)!.last_time_awake = now
 
 			// act
 			powermanager_update(mut t.farmerbot)!
