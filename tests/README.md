@@ -3,7 +3,7 @@ We highly recommend to write proper tests that cover most of the code in this re
 
 ## Running the existing tests
 The tests have to be run before landing any PR. You can run the existing tests by running the command below:
-> bash tests/run_tests.v
+> bash tests/run_tests.sh
 
 Or if you wish to run the tests for a specific manager:
 > v -stats test tests/nodemanager_test.v
