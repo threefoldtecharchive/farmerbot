@@ -1,6 +1,6 @@
 services:
   farmerbot:
-    image: ghcr.io/threefoldtech/farmerbot:0.1.0
+    image: ghcr.io/threefoldtech/farmerbot:0.1.0-rc13
     restart: always
     depends_on:
       redis:
