@@ -1,6 +1,7 @@
 services:
   farmerbot:
     image: ghcr.io/threefoldtech/farmerbot:0.1.0
+    restart: always
     depends_on:
       redis:
         condition: service_healthy
@@ -14,6 +15,7 @@ services:
 
   rmbpeer:
     image: ghcr.io/threefoldtech/rmb-peer:v1.0.3
+    restart: always
     depends_on:
       redis:
         condition: service_healthy
@@ -22,6 +24,7 @@ services:
 
   grid3_client:
     image: ghcr.io/threefoldtech/grid_http_server:2.0.0-rc3
+    restart: always
     depends_on:
       redis:
         condition: service_healthy
