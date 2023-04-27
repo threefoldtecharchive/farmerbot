@@ -76,16 +76,20 @@ Please modify the fields to what is required (network, relay, etc). Now to run t
 ```
 docker compose up
 ```
-The farmerbot should be running after a couple of seconds. It will create a log file inside your config folder called *farmerbot.log*. If you wish to restart a running farmerbot you can run the command shown below. It can take a couple of seconds before the farmerbot is completely shutdown. But before doing that it might be good to copy or delete the old log file.
+The farmerbot should be running after a couple of seconds. It will create a log file inside your config folder called *farmerbot.log*. If you wish to restart a running farmerbot you can run the commands shown below. It can take a couple of seconds before the farmerbot is completely shutdown. But before doing that it might be good to copy or delete the old log file. First stop the farmerbot that is running:
 ```
-docker compose restart
+docker compose rm -f -s -v
+```
+Now manually power on the nodes that are off (wait till they are on). Although it is not required to do that it is highly recommended. Finally you can run the new farmerbot:
+```
+docker compose up -d
 ```
 
-If the docker-compose file has changed and you wish to run the new version you will have to copy the new docker-compose file, stop the running farmerbot and start the new farmerbot. Or just run the command (copy or delete the log file first):
+If the docker-compose file has changed and you wish to run the new version you will have to copy the new docker-compose file. Run the command shown below to do that:
 ```
-docker compose rm -f -s && docker compose up -d
+wget https://raw.githubusercontent.com/threefoldtech/farmerbot/development/docker-compose.yaml
 ```
-This again will take a couple of seconds.
+Now follow the steps shown previously to restart the farmerbot.
 
 ### Node configuration
 The farmerbot will manage the nodes that you define in the configuration.
