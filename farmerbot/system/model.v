@@ -4,10 +4,10 @@ import math { ceil }
 import time { Duration, Time }
 
 pub const (
-	default_wakeup_threshold = 80
+	default_wakeup_threshold      = 80
 	default_periodic_wakeup_limit = 1
-	min_wakeup_threshold     = 50
-	max_wakeup_threshold     = 80
+	min_wakeup_threshold          = 50
+	max_wakeup_threshold          = 80
 )
 
 pub enum FarmerbotState as u8 {

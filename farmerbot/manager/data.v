@@ -23,8 +23,18 @@ mut:
 	zos     &IZos
 }
 
+pub fn (mut d DataManager) on_started() {
+	for nodeid in d.db.nodes.keys() {
+		d.ping_node(nodeid)
+	}
+}
+
+pub fn (mut d DataManager) on_stop() {
+	
+}
+
 pub fn (mut d DataManager) init(mut action actions.Action) ! {
-	d.logger.warn("${data_manager_prefix} Unknown action ${action.name}")
+	d.logger.warn('${manager.data_manager_prefix} Unknown action ${action.name}')
 }
 
 pub fn (mut d DataManager) execute(mut job jobs.ActionJob) ! {
@@ -63,10 +73,10 @@ fn (mut d DataManager) ping_node(nodeid u32) bool {
 				d.logger.info('${manager.data_manager_prefix} Node ${node.id} is OFF.')
 			}
 		}
-		node.powerstate = .off
 		if node.powerstate != .off {
 			node.last_time_powerstate_changed = time.now()
 		}
+		node.powerstate = .off
 		return false
 	}
 	// We got a response from ZOS: it is still online. If the powerstate is shutting down

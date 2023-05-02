@@ -20,7 +20,7 @@ pub fn logger() &log.Logger {
 	}
 	if output_file != '' {
 		l.set_full_logpath(output_file)
-		if log_to_console == "" || log_to_console == "1" || log_to_console == "TRUE" {
+		if log_to_console == '' || log_to_console == '1' || log_to_console == 'TRUE' {
 			l.log_to_console_too()
 		}
 	}

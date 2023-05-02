@@ -16,7 +16,13 @@ mut:
 	db &system.DB
 	logger &log.Logger
 	tfchain &system.ITfChain
-	zos &system.IZos // is executed at initialization time
+	zos &system.IZos 
+	
+	// executed once the farmerbot is started
+	on_started()
+	// executed on shutdown of the farmerbot
+	on_stop()
+	// is executed at initialization time
 	init(mut action actions.Action) !
 	// execute a job
 	execute(mut action jobs.ActionJob) !
