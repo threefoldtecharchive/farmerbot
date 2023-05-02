@@ -29,6 +29,10 @@ pub fn (mut d DataManager) on_started() {
 	}
 }
 
+pub fn (mut d DataManager) on_stop() {
+	
+}
+
 pub fn (mut d DataManager) init(mut action actions.Action) ! {
 	d.logger.warn('${manager.data_manager_prefix} Unknown action ${action.name}')
 }

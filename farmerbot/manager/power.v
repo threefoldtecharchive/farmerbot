@@ -29,6 +29,11 @@ pub fn (mut p PowerManager) on_started() {
 	p.poweron_all_nodes()
 }
 
+pub fn (mut p PowerManager) on_stop() {
+	p.poweron_all_nodes()	
+}
+
+
 pub fn (mut p PowerManager) init(mut action actions.Action) ! {
 	if action.name == system.action_power_configure {
 		p.configure(mut action)!

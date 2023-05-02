@@ -781,3 +781,23 @@ fn test_on_started() {
 		}
 	)!
 }
+
+fn test_on_stop() {
+	run_test("test_on_stop",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			for mut node in t.farmerbot.db.nodes.values() {
+				node.powerstate = .off
+			}
+			t.farmerbot.db.get_node(3)!.powerstate = .on
+			t.farmerbot.db.get_node(5)!.powerstate = .on
+
+			// act
+			t.powermanager_on_stop()!
+
+			// assert
+			assert t.farmerbot.db.nodes.values().filter(it.powerstate == .on).len == 2
+			assert t.farmerbot.db.nodes.values().filter(it.powerstate == .wakingup).len == t.farmerbot.db.nodes.len - 2
+		}
+	)!
+}

@@ -38,6 +38,12 @@ fn (mut f Farmerbot) on_started() {
 	}
 }
 
+fn (mut f Farmerbot) on_stop() {
+	for _, mut manager in f.managers {
+		manager.on_stop()
+	}
+}
+
 fn (mut f Farmerbot) update() {
 	for f.running {
 		time_start := time.now()
@@ -134,6 +140,7 @@ pub fn (mut f Farmerbot) run() ! {
 
 pub fn (mut f Farmerbot) shutdown() {
 	f.logger.info('Shutting down')
+	f.on_stop()
 	f.actionrunner.running = false
 	f.processor.running = false
 	f.running = false

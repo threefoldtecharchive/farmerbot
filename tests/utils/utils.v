@@ -148,6 +148,11 @@ pub fn (mut t TestEnvironment) powermanager_on_started() ! {
 	powermanager.on_started()
 }
 
+pub fn (mut t TestEnvironment) powermanager_on_stop() ! {
+	mut powermanager := t.farmerbot.get_manager("powermanager")!
+	powermanager.on_stop()
+}
+
 pub fn wait_till_jobs_are_finished(actor string, mut c Client) ! {
  	for c.check_remaining_jobs(actor)! > 0 {
 	}

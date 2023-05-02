@@ -26,6 +26,10 @@ pub mut:
 pub fn (mut n NodeManager) on_started() {
 }
 
+pub fn (mut n NodeManager) on_stop() {	
+}
+
+
 pub fn (mut n NodeManager) init(mut action actions.Action) ! {
 	if action.name == system.action_node_define {
 		n.data_set(mut action)!
