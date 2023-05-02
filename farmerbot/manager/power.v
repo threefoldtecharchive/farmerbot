@@ -24,11 +24,16 @@ mut:
 	zos     &IZos
 }
 
+pub fn (mut p PowerManager) on_started() {
+	// power on all nodes on start of farmerbot
+	p.poweron_all_nodes()
+}
+
 pub fn (mut p PowerManager) init(mut action actions.Action) ! {
 	if action.name == system.action_power_configure {
 		p.configure(mut action)!
 	} else {
-		p.logger.warn("${power_manager_prefix} Unknown action ${action.name}")
+		p.logger.warn('${manager.power_manager_prefix} Unknown action ${action.name}')
 	}
 }
 
@@ -51,6 +56,14 @@ pub fn (mut p PowerManager) execute(mut job jobs.ActionJob) ! {
 pub fn (mut p PowerManager) update() {
 	p.periodic_wakeup()
 	p.power_management()
+}
+
+fn (mut p PowerManager) poweron_all_nodes() {
+	for mut node in p.db.nodes.values().filter(it.powerstate == .off) {
+		p.schedule_power_job(node.id, .on) or {
+			p.logger.error('${manager.power_manager_prefix} Job to power on node ${node.id} failed: ${err}')
+		}
+	}
 }
 
 fn (mut p PowerManager) periodic_wakeup() {
@@ -104,7 +117,8 @@ fn (mut p PowerManager) resource_usage_too_high(used_resources u64, total_resour
 	nodes_on := p.db.nodes.values().filter(it.powerstate == .on)
 	// nodes with public config can't be shutdown
 	// Do not shutdown a node that just came up (give it some time)
-	nodes_allowed_to_shutdown := nodes_on.filter(it.is_unused() && !it.public_config && !it.never_shutdown
+	nodes_allowed_to_shutdown := nodes_on.filter(it.is_unused() && !it.public_config
+		&& !it.never_shutdown
 		&& time.since(it.last_time_powerstate_changed) >= manager.periodic_wakeup_duration)
 
 	if nodes_on.len > 1 {
@@ -130,9 +144,11 @@ fn (mut p PowerManager) resource_usage_too_high(used_resources u64, total_resour
 				p.logger.info('${manager.power_manager_prefix} Resource usage too low: ${new_resource_usage}. Turning off unused node ${node.id}')
 				p.schedule_power_job(node.id, .off) or {
 					// Something went wrong so undo calculation
-					nodes_left_online += 1 
-					new_used_resources += node.resources.used.hru + node.resources.used.sru + node.resources.used.mru + node.resources.used.cru
-					new_total_resources += node.resources.total.hru + node.resources.total.sru + node.resources.total.mru + node.resources.total.cru
+					nodes_left_online += 1
+					new_used_resources += node.resources.used.hru + node.resources.used.sru +
+						node.resources.used.mru + node.resources.used.cru
+					new_total_resources += node.resources.total.hru + node.resources.total.sru +
+						node.resources.total.mru + node.resources.total.cru
 					p.logger.error('${manager.power_manager_prefix} Job to power off node ${node.id} failed: ${err}')
 				}
 			}
@@ -184,7 +200,7 @@ fn (mut p PowerManager) poweron(mut job jobs.ActionJob) ! {
 	p.tfchain.set_node_power(node.id, .on) or {
 		node.powerstate = powerstate
 		node.last_time_powerstate_changed = last_time_powerstate_changed
-		return error("$err")
+		return error('${err}')
 	}
 }
 
@@ -215,7 +231,7 @@ fn (mut p PowerManager) poweroff(mut job jobs.ActionJob) ! {
 	p.tfchain.set_node_power(node.id, .off) or {
 		node.powerstate = powerstate
 		node.last_time_powerstate_changed = last_time_powerstate_changed
-		return error("$err")
+		return error('${err}')
 	}
 }
 
@@ -247,7 +263,8 @@ fn (mut p PowerManager) configure(mut action actions.Action) ! {
 
 	periodic_wakeup_start := action.params.get_time_default('periodic_wakeup', time.hour * time.now().hour)!
 
-	mut periodic_wakeup_limit := action.params.get_u8_default('periodic_wakeup_limit', system.default_periodic_wakeup_limit)!
+	mut periodic_wakeup_limit := action.params.get_u8_default('periodic_wakeup_limit',
+		system.default_periodic_wakeup_limit)!
 	if periodic_wakeup_limit == 0 {
 		periodic_wakeup_limit = system.default_periodic_wakeup_limit
 		p.logger.warn('${manager.power_manager_prefix} The setting periodic_wakeup_limit should be greater then 0!')

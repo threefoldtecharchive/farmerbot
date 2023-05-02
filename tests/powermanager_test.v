@@ -1,7 +1,7 @@
 module main
 
 import utils { 
-	ensure_error_message, ensure_no_error, powermanager_update,
+	ensure_error_message, ensure_no_error,
 	put_usage_to_x_procent, run_test, TestEnvironment
 }
 import freeflowuniverse.baobab.client { Client }
@@ -382,7 +382,7 @@ fn test_power_management_resource_usage_too_high() {
 			put_usage_to_x_procent(mut node_5, 81)
 
 			// act
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.get_node(8)!.powerstate == .wakingup
@@ -408,7 +408,7 @@ fn test_power_management_resource_usage_is_perfect() {
 			put_usage_to_x_procent(mut node_5, 70)
 
 			// act
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.nodes.values().filter(it.powerstate == .on).len == 2
@@ -434,7 +434,7 @@ fn test_power_management_resource_usage_too_low() {
 			put_usage_to_x_procent(mut node_8, 100)
 
 			// act
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.get_node(3)!.powerstate == .shuttingdown
@@ -463,7 +463,7 @@ fn test_power_management_resource_usage_too_low_shutdown_2_nodes() {
 			put_usage_to_x_procent(mut node_8, 10)
 
 			// act
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.get_node(3)!.powerstate == .shuttingdown
@@ -489,7 +489,7 @@ fn test_power_management_resource_usage_too_low_nodes_that_cant_shutdown() {
 			t.farmerbot.db.get_node(8)!.never_shutdown = true
 
 			// act
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.get_node(3)!.powerstate == .on
@@ -514,7 +514,7 @@ fn test_power_management_resource_usage_too_low_keep_at_least_one_node_on() {
 			t.farmerbot.db.get_node(5)!.powerstate = .on
 
 			// act
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.get_node(3)!.powerstate == .shuttingdown
@@ -545,7 +545,7 @@ fn test_power_management_resource_usage_too_low_no_nodes_to_bring_down() {
 			put_usage_to_x_procent(mut node_8, 55)
 
 			// act
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.nodes.values().filter(it.powerstate == .on).len == 3
@@ -574,8 +574,8 @@ fn test_power_management_periodic_wakeup() {
 
 			// act
 			// we wake up only one node at a time
-			powermanager_update(mut t.farmerbot)!
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.get_node(3)!.powerstate == .wakingup
@@ -606,7 +606,7 @@ fn test_power_management_periodic_wakeup_limit() {
 
 			// act
 			// we wake up two at a time
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.get_node(3)!.powerstate == .wakingup
@@ -636,7 +636,7 @@ fn test_power_management_after_periodic_wakeup_too_early_to_shutdown() {
 			t.farmerbot.db.get_node(5)!.last_time_powerstate_changed = now
 
 			// act
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.get_node(3)!.powerstate == .on
@@ -663,7 +663,7 @@ fn test_power_management_second_shutdown_fails() {
 			}
 
 			// act
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.get_node(5)!.powerstate == .on
@@ -690,7 +690,7 @@ fn test_power_management_after_periodic_wakeup_allowed_to_shutdown() {
 			t.farmerbot.db.get_node(5)!.last_time_powerstate_changed = now.add(time.minute * -30)
 
 			// act
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.get_node(3)!.powerstate == .on
@@ -721,7 +721,7 @@ fn test_periodic_wakeup_and_power_management_resource_usage_too_low() {
 			t.farmerbot.db.get_node(5)!.last_time_awake = now.add(time.hour * -24)
 
 			// act
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.get_node(3)!.powerstate == .wakingup
@@ -751,12 +751,33 @@ fn test_periodic_wakeup_and_power_management_resource_usage_too_high() {
 			t.farmerbot.db.get_node(5)!.last_time_awake = now
 
 			// act
-			powermanager_update(mut t.farmerbot)!
+			t.powermanager_update()!
 
 			// assert
 			assert t.farmerbot.db.get_node(3)!.powerstate == .wakingup
 			assert t.farmerbot.db.get_node(5)!.powerstate == .off
 			assert t.farmerbot.db.nodes.values().filter(it.powerstate == .on).len == t.farmerbot.db.nodes.len - 2
+		}
+	)!
+}
+
+
+fn test_on_started() {
+	run_test("test_on_started",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			for mut node in t.farmerbot.db.nodes.values() {
+				node.powerstate = .off
+			}
+			t.farmerbot.db.get_node(3)!.powerstate = .on
+			t.farmerbot.db.get_node(5)!.powerstate = .on
+
+			// act
+			t.powermanager_on_started()!
+
+			// assert
+			assert t.farmerbot.db.nodes.values().filter(it.powerstate == .on).len == 2
+			assert t.farmerbot.db.nodes.values().filter(it.powerstate == .wakingup).len == t.farmerbot.db.nodes.len - 2
 		}
 	)!
 }

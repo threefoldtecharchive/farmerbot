@@ -32,6 +32,12 @@ pub fn (f &Farmerbot) get_manager(name string) !&manager.Manager {
 	return f.managers[name] or { return error('Unknown manager ${name}') }
 }
 
+fn (mut f Farmerbot) on_started() {
+	for _, mut manager in f.managers {
+		manager.on_started()
+	}
+}
+
 fn (mut f Farmerbot) update() {
 	for f.running {
 		time_start := time.now()
@@ -117,6 +123,7 @@ pub fn (mut f Farmerbot) init() ! {
 
 pub fn (mut f Farmerbot) run() ! {
 	f.running = true
+	f.on_started()
 	spawn (&f).update()
 	spawn (&f.actionrunner).run()
 	t := spawn (&f.processor).run()

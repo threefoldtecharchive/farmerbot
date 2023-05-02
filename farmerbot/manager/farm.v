@@ -21,11 +21,14 @@ mut:
 	zos     &system.IZos
 }
 
+pub fn (mut f FarmManager) on_started() {
+}
+
 pub fn (mut f FarmManager) init(mut action actions.Action) ! {
 	if action.name == system.action_farm_define {
 		f.data_set(mut action)!
 	} else {
-		f.logger.warn("${farm_manager_prefix} Unknown action ${action.name}")
+		f.logger.warn('${manager.farm_manager_prefix} Unknown action ${action.name}')
 	}
 }
 

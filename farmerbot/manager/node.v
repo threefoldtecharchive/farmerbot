@@ -23,11 +23,14 @@ pub mut:
 	zos     &system.IZos
 }
 
+pub fn (mut n NodeManager) on_started() {
+}
+
 pub fn (mut n NodeManager) init(mut action actions.Action) ! {
 	if action.name == system.action_node_define {
 		n.data_set(mut action)!
 	} else {
-		n.logger.warn("${node_manager_prefix} Unknown action ${action.name}")
+		n.logger.warn('${manager.node_manager_prefix} Unknown action ${action.name}')
 	}
 }
 

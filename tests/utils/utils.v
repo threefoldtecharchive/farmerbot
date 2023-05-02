@@ -138,9 +138,14 @@ pub fn run_test(name string, test Test) ! {
 	t_pr.wait()
 }
 
-pub fn powermanager_update(mut farmerbot Farmerbot) ! {
-	mut powermanager := farmerbot.get_manager("powermanager")!
+pub fn (mut t TestEnvironment) powermanager_update() ! {
+	mut powermanager := t.farmerbot.get_manager("powermanager")!
 	powermanager.update()
+}
+
+pub fn (mut t TestEnvironment) powermanager_on_started() ! {
+	mut powermanager := t.farmerbot.get_manager("powermanager")!
+	powermanager.on_started()
 }
 
 pub fn wait_till_jobs_are_finished(actor string, mut c Client) ! {
