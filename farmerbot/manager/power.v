@@ -11,6 +11,7 @@ import time
 const (
 	power_manager_prefix     = '[POWERMANAGER]'
 	periodic_wakeup_duration = time.minute * 30
+	timeout_power_job = 5
 )
 
 [heap]
@@ -26,10 +27,12 @@ mut:
 
 pub fn (mut p PowerManager) on_started() {
 	// power on all nodes on start of farmerbot
+	p.logger.info("${manager.power_manager_prefix} Startup proces: powering on all nodes that are down.")
 	p.poweron_all_nodes()
 }
 
 pub fn (mut p PowerManager) on_stop() {
+	p.logger.info("${manager.power_manager_prefix} Shutdown proces: powering on all nodes that are down.")
 	p.poweron_all_nodes()	
 }
 
@@ -64,7 +67,7 @@ pub fn (mut p PowerManager) update() {
 }
 
 fn (mut p PowerManager) poweron_all_nodes() {
-	for mut node in p.db.nodes.values().filter(it.powerstate == .off) {
+	for mut node in p.db.nodes.values().filter(it.powerstate == .off || it.powerstate == .shuttingdown) {
 		p.schedule_power_job(node.id, .on) or {
 			p.logger.error('${manager.power_manager_prefix} Job to power on node ${node.id} failed: ${err}')
 		}
@@ -248,6 +251,7 @@ fn (mut p PowerManager) schedule_power_job(nodeid u32, powerstate system.PowerSt
 		action: if powerstate == .on { system.job_power_on } else { system.job_power_off }
 		args: args
 		actionsource: ''
+		timeout: timeout_power_job
 	)!
 	if job.state == .error {
 		return error('${job.error}')
