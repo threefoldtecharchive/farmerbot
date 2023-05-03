@@ -270,7 +270,7 @@ fn (mut p PowerManager) configure(mut action actions.Action) ! {
 		p.logger.warn('${manager.power_manager_prefix} The setting wake_up_threshold should be in the range [${system.min_wakeup_threshold}, ${system.max_wakeup_threshold}]')
 	}
 
-	periodic_wakeup_start := action.params.get_time_default('periodic_wakeup', time.hour * time.now().hour)!
+	periodic_wakeup_start := action.params.get_timestamp_default('periodic_wakeup', time.hour * time.now().hour)!
 
 	mut periodic_wakeup_limit := action.params.get_u8_default('periodic_wakeup_limit',
 		system.default_periodic_wakeup_limit)!

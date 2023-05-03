@@ -160,10 +160,10 @@ pub fn wait_till_jobs_are_finished(actor string, mut c Client) ! {
 
 pub fn capacity_from_args(args &Params) !Capacity {
 	return Capacity {
-		hru: args.get_resource_in_bytes("required_hru")!
-		sru: args.get_resource_in_bytes("required_sru")!
-		mru: args.get_resource_in_bytes("required_mru")!
-		cru: args.get_resource_in_bytes("required_cru")!
+		hru: args.get_storagecapacity_in_bytes("required_hru")!
+		sru: args.get_storagecapacity_in_bytes("required_sru")!
+		mru: args.get_storagecapacity_in_bytes("required_mru")!
+		cru: args.get_storagecapacity_in_bytes("required_cru")!
 	}
 }
 
