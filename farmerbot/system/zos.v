@@ -17,7 +17,7 @@ pub mut:
 	dst []u32
 	ret string
 	now u64
-	shm string
+	shm string = 'application/json'
 }
 
 pub struct RmbError {
@@ -81,7 +81,7 @@ mut:
 	redis redisclient.Redis
 }
 
-fn (mut z ZosRMBPeer) rmb_client_request(cmd string, dst u32) !RmbResponse {
+pub fn (mut z ZosRMBPeer) rmb_client_request(cmd string, dst u32) !RmbResponse {
 	msg := RmbMessage{
 		ver: 1
 		cmd: cmd
@@ -94,6 +94,9 @@ fn (mut z ZosRMBPeer) rmb_client_request(cmd string, dst u32) !RmbResponse {
 	request := json.encode_pretty(msg)
 	z.redis.lpush('msgbus.system.local', request)!
 	response_json := z.redis.blpop([msg.ret], 5)!
+	if response_json.len != 2 || response_json[1] == '' {
+		return error("timeout on blpop")
+	}
 	response := json.decode(RmbResponse, response_json[1])!
 	return response
 }

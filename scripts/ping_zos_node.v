@@ -1,32 +1,14 @@
 module main
 
-import freeflowuniverse.crystallib.redisclient
+import threefoldtech.farmerbot.system
 
-import threefoldtech.farmerbot.system {RmbMessage}
-
-import encoding.base64
 import flag
-import json 
 import os
-import rand
-import time
 
 
-fn do(mut redis redisclient.Redis, cmd string, src u32, dst u32) ! { 
-	msg := RmbMessage {
-			ver: 1
-			cmd: cmd
-			exp: 10
-			src: "$src"
-			dat: base64.encode_str("")
-			dst: [dst]
-			ret: rand.uuid_v4()
-			shm: "application/json"
-			now: u64(time.now().unix_time())
-	}
-	request := json.encode_pretty(msg)
-	redis.lpush('msgbus.system.local', request)!
-	response_json := redis.blpop([msg.ret], 10)!
+fn do(redis_address string, cmd string, src u32, dst u32) ! {
+	mut zos_rmbpeer := system.new_zosrmbpeer(redis_address)!
+	response_json := zos_rmbpeer.rmb_client_request(cmd, dst)!
 	println(response_json)
 }
 
@@ -45,10 +27,8 @@ pub fn main() {
 		println(fp.usage())
 		return
 	}
-	mut redis := redisclient.get(redis_address) or {
-		panic("$err")
-	}
-	do(mut redis, cmd, u32(twinid), u32(twinidnode)) or {
+
+	do(redis_address, cmd, u32(twinid), u32(twinidnode)) or {
 		eprintln(err)
 	}
 }
