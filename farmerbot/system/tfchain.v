@@ -55,7 +55,7 @@ pub fn (mut t TfChain) active_rent_contract_for_node(nodeid u32) !u64 {
 		nodeid: nodeid
 	}
 	response := http_client.send('contracts.activeRentContractForNode', json.encode(args)) or {
-		return error('Failed to send ')
+		return error('Failed to send: ${err}')
 	}
 	if response.err != '' {
 		return error('${response.err}')
