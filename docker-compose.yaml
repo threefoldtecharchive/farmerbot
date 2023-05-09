@@ -31,7 +31,7 @@ services:
       redis:
         condition: service_healthy
     entrypoint: /bin/sh -c
-    command: ["echo \"{\\\"network\\\":\\\"$NETWORK\\\",\\\"mnemonic\\\":\\\"$SECRET\\\",\\\"rmb_proxy\\\":false,\\\"storeSecret\\\":\\\"secret\\\",\\\"keypairType\\\":\\\"sr25519\\\"}\" > ~/config.json && yarn grid_http_server -c ~/config.json" ]
+    command: ["echo \"{\\\"network\\\":\\\"$NETWORK\\\",\\\"mnemonic\\\":\\\"$SECRET\\\",\\\"rmb_proxy\\\":false,\\\"keypairType\\\":\\\"sr25519\\\"}\" > ~/config.json && yarn grid_http_server -c ~/config.json" ]
     ports:
       - '3000'
     healthcheck:
