@@ -165,16 +165,17 @@ fn main() {
                         // Get dedicated status
 						dedicated := m['dedicated'] or {eprintln('Failed to decode json')
 							return}
-						this_file.writeln('\tdedicated:'+dedicated.str())!
+						    if dedicated.str() == "true" {
+							    this_file.writeln('\tdedicated:1')!
+						    }
 
                         // Get certification status
 						certified := m['certificationType'] or {eprintln('Failed to decode json')
 							return}
 						    if certified.str() == "Certified" {
-							    this_file.writeln('\tcertified:true')!
+							    this_file.writeln('\tcertified:yes')!
 						    } else {
-
-                                this_file.writeln('\tcertified:false')!
+                                this_file.writeln('\tcertified:no')!
                             }
 
                         // Check if there are public configurations
