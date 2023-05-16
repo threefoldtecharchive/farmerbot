@@ -7,7 +7,7 @@ const (
 
     // Messages
 
-	mess_opening_internet = '\n*** NOTE: You need an Internet connection to run this program properly. ***'
+    mess_opening_internet = '\n*** NOTE: You need an Internet connection to run this program properly. ***'
     mess_3node_one_farm = '*** NOTE: Make sure that all 3Nodes are within the same farm. ***\n'
 
     // Network names
@@ -212,9 +212,9 @@ fn main() {
                     if is_int.matches_string(answer) && answer.u32() >= 1 {
 
                         // Get info from node ID to fill up other parameters of the node section
-						result_get_proxy := http.get_text(grid_url_node + answer)
-						decoded := json2.raw_decode(result_get_proxy) or {eprintln(err_json + err_internet) return}
-						m := decoded.as_map()
+                        result_get_proxy := http.get_text(grid_url_node + answer)
+                        decoded := json2.raw_decode(result_get_proxy) or {eprintln(err_json + err_internet) return}
+                        m := decoded.as_map()
 
                         mut farm_id := m[s_farm_id] or {eprintln(err_json + err_node_network) return}
 
@@ -255,22 +255,22 @@ fn main() {
                         this_file.writeln(s_id + answer) or {eprintln(err_write) return}
 
                         // Get twinID status
-						twinid := m[s_twin_id] or {eprintln(err_json) return}
-						this_file.writeln(s_twin_id_input + twinid.str()) or {eprintln(err_write) return}
+                        twinid := m[s_twin_id] or {eprintln(err_json) return}
+                        this_file.writeln(s_twin_id_input + twinid.str()) or {eprintln(err_write) return}
 
                         // Get dedicated status
-						dedicated := m[s_dedicated] or {eprintln(err_json) return}
-						    if dedicated.str() == s_true {
-							    this_file.writeln(s_dedicated_true) or {eprintln(err_write) return}
-						    }
+                        dedicated := m[s_dedicated] or {eprintln(err_json) return}
+                        if dedicated.str() == s_true {
+                            this_file.writeln(s_dedicated_true) or {eprintln(err_write) return}
+                        }
 
                         // Get certification status
-						certified := m[s_cert_type] or {eprintln(err_json) return}
-						    if certified.str() == s_certified {
-							    this_file.writeln(s_cert_yes) or {eprintln(err_write) return}
-						    } else {
-                                this_file.writeln(s_cert_no) or {eprintln(err_write) return}
-                            }
+                        certified := m[s_cert_type] or {eprintln(err_json) return}
+                        if certified.str() == s_certified {
+                            this_file.writeln(s_cert_yes) or {eprintln(err_write) return}
+                        } else {
+                            this_file.writeln(s_cert_no) or {eprintln(err_write) return}
+                        }
 
                         // Check if there are public configurations
                         public_config := m[s_pub_config]or {eprintln(err_json) return}
@@ -284,8 +284,8 @@ fn main() {
                         }
 
                         // Get farm ID
-						farm_id_json := m[s_farm_id] or {eprintln(err_json) return}
-						farm_id = farm_id_json.str()
+                        farm_id_json := m[s_farm_id] or {eprintln(err_json) return}
+                        farm_id = farm_id_json.str()
 
                         break
 
@@ -325,16 +325,11 @@ fn main() {
 
                         this_file.writeln(s_cpu + answer) or {eprintln(err_write) return}
                         break
-
-                        } else if answer == s_no_entry {
-    
-                            break    
-
-                        } else {
-
-                            println(err_int_1_4)
-
-                        }
+                    } else if answer == s_no_entry {
+                        break    
+                    } else {
+                        println(err_int_1_4)
+                    }
 
                 }
 
