@@ -25,7 +25,7 @@ services:
     command: ["/usr/sbin/rmb-peer --redis redis://redis:6379 --mnemonic \"$SECRET\" --relay \"$RELAY\" --substrate \"$SUBSTRATE\" -d"]
 
   grid3_client:
-    image: ghcr.io/threefoldtech/grid_http_server:2.0.0-rc7
+    image: ghcr.io/threefoldtech/grid_http_server:2.0.0-rc8
     restart: always
     depends_on:
       redis:
