@@ -108,7 +108,7 @@ const (
 )
 
 // main
-// This program ask the farmars information on the farm and its 3nodes to create the .env and config/config.md files needed to run the farmerbot
+// This program ask the farmers information on the farm and its 3nodes to create the .env and config/config.md files needed to run the farmerbot
 fn main() {
 	// Print the opening message to the user
 	println(mess_opening_internet)
