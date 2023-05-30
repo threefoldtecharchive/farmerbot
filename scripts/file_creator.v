@@ -35,12 +35,14 @@ const (
 	err_node_network        = '\nMake sure the node exists on the selected network.'
 	err_choice_network      = 'ERROR: The network must be either main, dev, qa or test.\n'
 	err_non_zero_int        = 'ERROR: The number must be a nonzero integer.\n'
+	err_int_gt_one          = 'ERROR: The number must be an integer between 2 and 1000 inclusively.\n'
 	err_yes_no              = 'ERROR: Either answer yes, no or press ENTER.\n'
 	err_int_1_4             = 'ERROR: The number must be an integer and between 1 and 4 inclusively.\n'
 	err_int_50_80           = 'ERROR: The number must be an integer and between 50 and 80 inclusively.\n'
 	err_int_1_100           = 'ERROR: The number must be an integer and between 1 and 100 inclusively.\n'
 	err_12h_format          = 'The input should be in 12-hour format (e.g. 1:30AM or 12:30PM).\n'
 	err_save_wiki           = 'The markdown file couldn not save properly.'
+	err_path                = 'Failed to create file in path.'
 
 	// Regex
 
@@ -105,16 +107,22 @@ const (
 	ipv6                    = '"ipv6":""'
 )
 
+// main
+// This program ask the farmars information on the farm and its 3nodes to create the .env and config/config.md files needed to run the farmerbot
 fn main() {
 	// Print the opening message to the user
 	println(mess_opening_internet)
 
-	// array_farm Call create_env_file to create the .env file. Return an array with network_farm and grid_url_node
-	array_farm := (create_env_file())
-	network_farm := array_farm[0]
-	grid_url_node := array_farm[1]
+	// WRITE .ENV FILE
+	// create_env_file Create .env file and return strings network_farm and grid_url_node
+	network_farm, grid_url_node := create_env_file()
 
-	path_config := get_file(file_config, true) or { exit(1) }
+	path_config := get_file(file_config, true) or {
+		println(err_path)
+		exit(1)
+	}
+
+	// Create Doc object doc that stores the .md file information
 	mut doc := Doc{
 		path: path_config
 	}
@@ -122,195 +130,83 @@ fn main() {
 	// Print the message specifying all nodes should be from the same farm
 	println(mess_3node_one_farm)
 
-	// for loop for the number of 3nodes in the farm
-	for {
-		// Ask how many 3nodes there are in the farm
-		nodes := os.input(q_nodes)
-		println(s_no_entry)
+	// get the node manager parameters for each node
 
-		// Get into the 3node parameters section if the number of nodes is between 1 and 1000 inclusively
-		if is_int(nodes) && nodes.u32() >= 1 && nodes.u32() <= 1000 {
-			mut i := 0
+	mut param_array := []Params{}
 
-			// Iterate over each node
-			for i <= (nodes.u32() - 1) {
-				// initialize the node
-				mut params_node := Params{}
-				for {
-					nbi := i + 1
-					nb := nbi.str()
+	mut farm_id_string := ''
 
-					// Ask for the node ID
-					mut node_id := os.input(q_node_id + nb + ')\n')
-					println(s_no_entry)
+	param_array, farm_id_string = config_nodes(grid_url_node)
 
-					// Get into the parameter section if the node ID is valid
-					if is_int(node_id) && node_id.u32() >= 1 {
-						// Query grid proxy to get the information of the node
-						result_get_proxy := http.get_text(grid_url_node + node_id)
-						decoded := json2.raw_decode(result_get_proxy) or {
-							eprintln(err_json + err_internet)
-							return
-						}
-
-						// Decode the json as map to filter information
-						m := decoded.as_map()
-
-						// Get the farm ID associated with the node
-						mut farm_id := m[s_farm_id] or {
-							eprintln(err_json + err_node_network)
-							return
-						}
-
-						// SECTION 2.1: Farm Manager section
-						// For the first node, retrieve and print in config.md information for the farm manager
-						if nb == '1' {
-							// FARM MANAGER
-							// Add the farm ID in farm params
-							mut params_farm := Params{}
-							params_farm.kwarg_add(s_id, farm_id.str())
-
-							// Retrieve number of IP addresses for the given farm
-							mut grid_url_farm := ''
-
-							// Query the proper network (main, test, dev, qa)
-							if network_farm == s_main {
-								grid_url_farm = 'https://gridproxy.grid.tf/farms?farm_id=' +
-									farm_id.str()
-							} else if network_farm != s_main {
-								grid_url_farm = 'https://gridproxy.' + network_farm +
-									'.grid.tf/farms?farm_id=' + farm_id.str()
-							}
-
-							// Decode the result from grid proxy into json format
-							result_get_proxy_farm := http.get_text(grid_url_farm)
-							decoded_farm := json2.raw_decode(result_get_proxy_farm) or {
-								eprintln(err_json)
-								return
-							}
-
-							string_farm := decoded_farm.str()
-
-							// Count number of IP addresses for the given farm
-							iter_ip := string_farm.count(s_ip)
-
-							// Add the number of IP addresses in the farm params
-							params_farm.kwarg_add(s_pub_ip_input, iter_ip.str())
-
-							// Write farm manager in config.md
-							doc.items << Action{
-								name: s_farm_manager
-								params: params_farm
-							}
-						}
-
-						// SECTION 2.2: Node Manager section
-
-						// NODE MANAGER
-						// Add the node ID in node params
-
-						params_node.kwarg_add(s_id, node_id)
-
-						// Get twinID status
-						twinid := m[s_twin_id] or {
-							eprintln(err_json)
-							return
-						}
-
-						// Add the twin id associated with the node ID in node params
-						params_node.kwarg_add(s_twin_id_input, twinid.str())
-
-						// Get dedicated status
-						dedicated := m[s_dedicated] or {
-							eprintln(err_json)
-							return
-						}
-						if dedicated.str() == s_true {
-							params_node.kwarg_add(s_dedicated, s_true)
-						}
-
-						// Get certification status
-						certified := m[s_cert_type] or {
-							eprintln(err_json)
-							return
-						}
-						if certified.str() == s_certified {
-							params_node.kwarg_add(s_cert, s_true)
-						} else {
-							params_node.kwarg_add(s_cert, s_false)
-						}
-
-						// Check if there are public configurations
-						public_config := m[s_pub_config_json] or {
-							eprintln(err_json)
-							return
-						}
-						p_str := public_config.str()
-
-						if p_str.contains(gw4) && p_str.contains(gw6) && p_str.contains(ipv4)
-							&& p_str.contains(ipv6) {
-							params_node.kwarg_add(s_pub_config, s_false)
-						} else {
-							params_node.kwarg_add(s_pub_config, s_true)
-						}
-
-						// Get farm ID
-						farm_id_json := m[s_farm_id] or {
-							eprintln(err_json)
-							return
-						}
-						farm_id = farm_id_json.str()
-
-						break
-					} else {
-						println(err_non_zero_int)
-					}
-				}
-
-				for {
-					mut answer := os.input(q_shutdown)
-					println(s_no_entry)
-
-					if answer == s_yes {
-						params_node.kwarg_add(s_shutdown, s_true)
-						break
-					} else if answer == s_no || answer == s_no_entry {
-						break
-					} else {
-						println(err_yes_no)
-					}
-				}
-
-				for {
-					mut answer := os.input(q_cpu)
-					println(s_no_entry)
-
-					if is_int(answer) && answer.u32() >= 1 && answer.u32() <= 4 {
-						params_node.kwarg_add(s_cpu, answer)
-						break
-					} else if answer == s_no_entry {
-						break
-					} else {
-						println(err_int_1_4)
-					}
-				}
-
-				// Write farm manager in config.md
-				doc.items << Action{
-					name: s_node_manager
-					params: params_node
-				}
-
-				i++
-			}
-
-			break
-		} else {
-			println(err_non_zero_int)
-			println(s_no_entry)
-		}
+	// WRITE CONFIG.MD FILE
+	// Write farm manager section in config/config.md
+	doc.items << Action{
+		name: s_farm_manager
+		params: config_farm(farm_id_string, network_farm)
 	}
 
+	// Write power manager section in config/config.md
+	doc.items << Action{
+		name: s_power_manager
+		params: config_power()
+	}
+
+	// Write node manager section in config/config.md
+	mut i := 0
+	for i < param_array.len {
+		doc.items << Action{
+			name: s_node_manager
+			params: param_array[i]
+		}
+		i++
+	}
+
+	// Save the markdown file config/config.md
+	doc.save_wiki() or { println(err_save_wiki) }
+
+	println(mess_end_program)
+}
+
+fn config_farm(farm_id_string string, network_farm string) Params {
+	// SECTION 2.1: Farm Manager section
+	// For the first node, retrieve and print in config.md information for the farm manager
+	// FARM MANAGER
+	// Add the farm ID in farm params
+	mut params_farm := Params{}
+	params_farm.kwarg_add(s_id, farm_id_string)
+
+	// Retrieve number of IP addresses for the given farm
+	mut grid_url_farm := ''
+
+	// Query the proper network (main, test, dev, qa)
+	if network_farm == s_main {
+		grid_url_farm = 'https://gridproxy.grid.tf/farms?farm_id=' + farm_id_string
+	} else if network_farm != s_main {
+		grid_url_farm = 'https://gridproxy.' + network_farm + '.grid.tf/farms?farm_id=' +
+			farm_id_string
+	}
+
+	// Decode the result from grid proxy into json format
+	result_get_proxy_farm := http.get_text(grid_url_farm)
+	decoded_farm := json2.raw_decode(result_get_proxy_farm) or {
+		eprintln(err_json)
+		return params_farm
+	}
+
+	string_farm := decoded_farm.str()
+
+	// Count number of IP addresses for the given farm
+	iter_ip := string_farm.count(s_ip)
+
+	// Add the number of IP addresses in the farm params
+	params_farm.kwarg_add(s_pub_ip_input, iter_ip.str())
+
+	return params_farm
+}
+
+// config_power
+// Query the power parameters
+fn config_power() Params {
 	// POWER MANAGER
 	// Set the power manager configs in config/config.md
 	mut params_power := Params{}
@@ -318,16 +214,7 @@ fn main() {
 	params_power.kwarg_add(s_periodic_wakeup_limit, wake_up_limit_ask())
 	params_power.kwarg_add(s_periodic_wakeup, periodic_wakeup_ask())
 
-	// Write power manager in config.md
-	doc.items << Action{
-		name: s_power_manager
-		params: params_power
-	}
-
-	// Save the markdown file config/config.md
-	doc.save_wiki() or { println(err_save_wiki) }
-
-	println(mess_end_program)
+	return params_power
 }
 
 // is_int
@@ -363,7 +250,9 @@ fn wake_up_treshold_ask() string {
 		answer := os.input(q_threshold)
 		println(s_no_entry)
 
-		if is_int(answer) && answer.u32() >= 50 && answer.u32() <= 80 {
+		answer_int := answer.u32()
+
+		if is_int(answer) && answer_int >= 50 && answer_int <= 80 {
 			answer_return = answer
 			break
 		} else {
@@ -383,8 +272,13 @@ fn wake_up_limit_ask() string {
 		answer := os.input(q_wakeup_limit)
 		println(s_no_entry)
 
-		if is_int(answer) && answer.u32() >= 1 && answer.u32() <= 100 {
+		answer_int := answer.u32()
+
+		if is_int(answer) && answer_int >= 1 && answer_int <= 100 {
 			answer_return = answer
+			break
+		} else if answer == '' {
+			answer_return = '1'
 			break
 		} else {
 			println(err_int_1_100)
@@ -417,28 +311,25 @@ fn periodic_wakeup_ask() string {
 // create_env_file
 // Create the .env file with all necessary information.
 // Return an array with network_farm and grid_url_node
-fn create_env_file() []string {
+fn create_env_file() (string, string) {
 	// SECTION 1: Creating the .env file
 	// Setting the seed phrase
 
-	empty_array := ['']
+	// Mutable strings
+	mut grid_url_node := ''
+	mut network_farm := ''
 
 	os.rm(os.getwd() + file_env) or {}
 
 	mut this_file := os.create(file_env) or {
 		eprintln(err_create)
-		return empty_array
+		return network_farm, grid_url_node
 	}
 	mut answer := os.input(q_mnemonic)
 
-	// Mutable strings
-
-	mut grid_url_node := ''
-	mut network_farm := ''
-
 	this_file.writeln(s_secret + answer + '"') or {
 		eprintln(err_write)
-		return empty_array
+		return network_farm, grid_url_node
 	}
 	println(s_no_entry)
 
@@ -451,15 +342,15 @@ fn create_env_file() []string {
 		if answer == s_main {
 			this_file.writeln(s_network + answer) or {
 				eprintln(err_write)
-				return empty_array
+				return network_farm, grid_url_node
 			}
 			this_file.writeln(s_relay) or {
 				eprintln(err_write)
-				return empty_array
+				return network_farm, grid_url_node
 			}
 			this_file.writeln(s_substrate) or {
 				eprintln(err_write)
-				return empty_array
+				return network_farm, grid_url_node
 			}
 			grid_url_node = 'https://gridproxy.grid.tf/nodes/'
 			network_farm = answer
@@ -467,15 +358,15 @@ fn create_env_file() []string {
 		} else if answer == s_test || answer == s_qa || answer == s_dev {
 			this_file.writeln(s_network + answer) or {
 				eprintln(err_write)
-				return empty_array
+				return network_farm, grid_url_node
 			}
 			this_file.writeln('RELAY=wss://relay.' + answer + '.grid.tf:443') or {
 				eprintln(err_write)
-				return empty_array
+				return network_farm, grid_url_node
 			}
 			this_file.writeln('SUBSTRATE=wss://tfchain.' + answer + '.grid.tf:443') or {
 				eprintln(err_write)
-				return empty_array
+				return network_farm, grid_url_node
 			}
 			grid_url_node = 'https://gridproxy.' + answer + '.grid.tf/nodes/'
 			network_farm = answer
@@ -487,7 +378,159 @@ fn create_env_file() []string {
 
 	this_file.close()
 
-	array_string := [network_farm, grid_url_node]
+	return network_farm, grid_url_node
+}
 
-	return array_string
+fn config_nodes(grid_url_node string) ([]Params, string) {
+	// for loop for the number of 3nodes in the farm
+	mut farm_id_string := ''
+	mut param_array := []Params{}
+	for {
+		// Ask how many 3nodes there are in the farm
+		nodes := os.input(q_nodes)
+		println(s_no_entry)
+
+		number_of_nodes := nodes.u32()
+
+		// Get into the 3node parameters section if the number of nodes is between 2 and 1000 inclusively
+		if is_int(nodes) && number_of_nodes > 1 && number_of_nodes <= 1000 {
+			param_array = []Params{len: int(number_of_nodes)}
+			mut i := 0
+
+			// Iterate over each node
+			for i < number_of_nodes {
+				// initialize the node
+				mut params_node := Params{}
+				for {
+					nbi := i + 1
+					node_nb := nbi.str()
+
+					// Ask for the node ID
+					mut node_id := os.input(q_node_id + node_nb + ')\n')
+					println(s_no_entry)
+
+					mut node_id_u32 := node_id.u32()
+
+					// Get into the parameter section if the node ID is valid
+					if is_int(node_id) && node_id_u32 >= 1 {
+						// Query grid proxy to get the information of the node
+						result_get_proxy := http.get_text(grid_url_node + node_id)
+						decoded := json2.raw_decode(result_get_proxy) or {
+							eprintln(err_json + err_internet)
+							return param_array, farm_id_string
+						}
+
+						// Decode the json as map to filter information
+						m := decoded.as_map()
+
+						// If it's the first 3node of the series, store the farm ID in a string
+						if node_nb == '1' {
+							// Get the farm ID associated with the node
+							farm_id := m[s_farm_id] or {
+								eprintln(err_json + err_node_network)
+								return param_array, farm_id_string
+							}
+							farm_id_string = farm_id.str()
+						}
+
+						// SECTION 2.2: Node Manager section
+
+						// NODE MANAGER
+						// Add the node ID in node params
+						params_node.kwarg_add(s_id, node_id)
+
+						// Get twinID status
+						twinid := m[s_twin_id] or {
+							eprintln(err_json)
+							return param_array, farm_id_string
+						}
+
+						// Add the twin id associated with the node ID in node params
+						params_node.kwarg_add(s_twin_id_input, twinid.str())
+
+						// Get dedicated status
+						dedicated := m[s_dedicated] or {
+							eprintln(err_json)
+							return param_array, farm_id_string
+						}
+						if dedicated.str() == s_true {
+							params_node.kwarg_add(s_dedicated, s_true)
+						}
+
+						// Get certification status
+						certified := m[s_cert_type] or {
+							eprintln(err_json)
+							return param_array, farm_id_string
+						}
+						if certified.str() == s_certified {
+							params_node.kwarg_add(s_cert, s_true)
+						} else {
+							params_node.kwarg_add(s_cert, s_false)
+						}
+
+						// Check if there are public configurations
+						public_config := m[s_pub_config_json] or {
+							eprintln(err_json)
+							return param_array, farm_id_string
+						}
+						p_str := public_config.str()
+
+						if p_str.contains(gw4) && p_str.contains(gw6) && p_str.contains(ipv4)
+							&& p_str.contains(ipv6) {
+							params_node.kwarg_add(s_pub_config, s_false)
+						} else {
+							params_node.kwarg_add(s_pub_config, s_true)
+						}
+
+						break
+					} else {
+						println(err_non_zero_int)
+					}
+				}
+
+				// Ask if the node should never be shutdown
+				for {
+					answer := os.input(q_shutdown)
+					println(s_no_entry)
+
+					if answer == s_yes {
+						params_node.kwarg_add(s_shutdown, s_true)
+						break
+					} else if answer == s_no || answer == s_no_entry {
+						break
+					} else {
+						println(err_yes_no)
+					}
+				}
+
+				// Ask if the cpu should be overprovisioned
+				for {
+					answer := os.input(q_cpu)
+					println(s_no_entry)
+
+					answer_int := answer.u32()
+
+					if is_int(answer) && answer_int >= 1 && answer_int <= 4 {
+						params_node.kwarg_add(s_cpu, answer)
+						break
+					} else if answer == s_no_entry {
+						break
+					} else {
+						println(err_int_1_4)
+					}
+				}
+
+				param_array[i] = params_node
+
+				i++
+			}
+
+			break
+		} else {
+			println(err_int_gt_one)
+			println(s_no_entry)
+		}
+
+	}
+	return param_array, farm_id_string
 }
