@@ -131,25 +131,51 @@ fn main() {
 	println(mess_3node_one_farm)
 
 	// get the node manager parameters for each node
+	param_array, farm_id_string := config_nodes(grid_url_node)
 
-	mut param_array := []Params{}
+	// Create the section farm manager in config.md
+	doc_config_farm(farm_id_string, network_farm, mut doc)
 
-	mut farm_id_string := ''
+	// Create the section power manager in config.md
+	doc_config_power(mut doc)
 
-	param_array, farm_id_string = config_nodes(grid_url_node)
+	// Create the section node manager in config.md
+	doc_config_node(param_array, mut doc)
 
-	// WRITE CONFIG.MD FILE
+	// Save the markdown file config/config.md
+	doc.save_wiki() or { println(err_save_wiki) }
+
+	println(mess_end_program)
+}
+
+// doc_config_farm
+// Create the section farm manager in config.md
+fn doc_config_farm(farm_id_string string, network_farm string, mut doc &Doc) {
+
+// WRITE CONFIG.MD FILE
 	// Write farm manager section in config/config.md
 	doc.items << Action{
 		name: s_farm_manager
 		params: config_farm(farm_id_string, network_farm)
 	}
 
+}
+
+// doc_config_power
+// Create the section power manager in config.md
+fn doc_config_power(mut doc &Doc) {
+
 	// Write power manager section in config/config.md
 	doc.items << Action{
 		name: s_power_manager
 		params: config_power()
 	}
+
+}
+
+// doc_config_node
+// Create the section node manager in config.md
+fn doc_config_node(param_array []Params, mut doc &Doc) {
 
 	// Write node manager section in config/config.md
 	mut i := 0
@@ -161,10 +187,6 @@ fn main() {
 		i++
 	}
 
-	// Save the markdown file config/config.md
-	doc.save_wiki() or { println(err_save_wiki) }
-
-	println(mess_end_program)
 }
 
 fn config_farm(farm_id_string string, network_farm string) Params {
