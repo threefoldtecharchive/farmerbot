@@ -96,7 +96,6 @@ const (
 
 	s_true                  = 'true'
 	s_false                 = 'false'
-
 )
 
 // main
@@ -143,21 +142,21 @@ fn main() {
 // Struct for gridproxy json query
 
 struct Node_json {
-	nodeid            int        [json: 'nodeId']
-	farmid            int        [json: 'farmId']
-	twinid            int        [json: 'twinId']
-	certificationtype string     [json: 'certificationType']
+	nodeid            int          [json: 'nodeId']
+	farmid            int          [json: 'farmId']
+	twinid            int          [json: 'twinId']
+	certificationtype string       [json: 'certificationType']
 	dedicated         bool
 	publicconfig      PublicConfig [json: 'publicConfig']
 }
 
 // Struct for publicconfig element of Node_json struct
 struct PublicConfig {
-  domain string
-  gw4 string
-  gw6 string
-  ipv4 string
-  ipv6 string
+	domain string
+	gw4    string
+	gw6    string
+	ipv4   string
+	ipv6   string
 }
 
 // doc_config_farm
@@ -479,7 +478,8 @@ fn config_nodes(grid_url_node string) ([]Params, string) {
 						// Check if there are public configurations
 						public_config := decoded.publicconfig
 
-						if public_config.ipv4 != '' || public_config.ipv6 != '' || public_config.gw4 != '' || public_config.gw6 != '' {
+						if public_config.ipv4 != '' || public_config.ipv6 != ''
+							|| public_config.gw4 != '' || public_config.gw6 != '' {
 							params_node.kwarg_add(s_pub_config, s_true)
 						} else {
 							params_node.kwarg_add(s_pub_config, s_false)
