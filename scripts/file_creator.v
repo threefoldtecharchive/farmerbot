@@ -1,6 +1,6 @@
 import os
 import regex
-import x.json2
+import json
 import net.http
 import freeflowuniverse.crystallib.markdowndocs { Action, Doc }
 import freeflowuniverse.crystallib.params { Params }
@@ -87,10 +87,8 @@ const (
 	s_no                    = 'no'
 	s_shutdown              = 'never_shutdown'
 	s_pub_config            = 'public_config'
-	s_pub_config_json       = 'publicConfig'
 	s_cert                  = 'certified'
 	s_certified             = 'Certified'
-	s_cert_type             = 'certificationType'
 	s_dedicated             = 'dedicated'
 
 	s_ip                    = '"ip"'
@@ -99,12 +97,6 @@ const (
 	s_true                  = 'true'
 	s_false                 = 'false'
 
-	// Public config names
-
-	gw4                     = '"gw4":""'
-	gw6                     = '"gw4":""'
-	ipv4                    = '"ipv4":""'
-	ipv6                    = '"ipv6":""'
 )
 
 // main
@@ -148,35 +140,50 @@ fn main() {
 	println(mess_end_program)
 }
 
+// Struct for gridproxy json query
+
+struct Node_json {
+	nodeid            int        [json: 'nodeId']
+	farmid            int        [json: 'farmId']
+	twinid            int        [json: 'twinId']
+	certificationtype string     [json: 'certificationType']
+	dedicated         bool
+	publicconfig      PublicConfig [json: 'publicConfig']
+}
+
+// Struct for publicconfig element of Node_json struct
+struct PublicConfig {
+  domain string
+  gw4 string
+  gw6 string
+  ipv4 string
+  ipv6 string
+}
+
 // doc_config_farm
 // Create the section farm manager in config.md
-fn doc_config_farm(farm_id_string string, network_farm string, mut doc &Doc) {
-
-// WRITE CONFIG.MD FILE
+fn doc_config_farm(farm_id_string string, network_farm string, mut doc Doc) {
+	// WRITE CONFIG.MD FILE
 	// Write farm manager section in config/config.md
 	doc.items << Action{
 		name: s_farm_manager
 		params: config_farm(farm_id_string, network_farm)
 	}
-
 }
 
 // doc_config_power
 // Create the section power manager in config.md
-fn doc_config_power(mut doc &Doc) {
-
+fn doc_config_power(mut doc Doc) {
 	// Write power manager section in config/config.md
 	doc.items << Action{
 		name: s_power_manager
 		params: config_power()
 	}
-
 }
 
 // doc_config_node
 // Create the section node manager in config.md
-fn doc_config_node(param_array []Params, mut doc &Doc) {
-
+fn doc_config_node(param_array []Params, mut doc Doc) {
 	// Write node manager section in config/config.md
 	mut i := 0
 	for i < param_array.len {
@@ -186,7 +193,6 @@ fn doc_config_node(param_array []Params, mut doc &Doc) {
 		}
 		i++
 	}
-
 }
 
 fn config_farm(farm_id_string string, network_farm string) Params {
@@ -208,17 +214,8 @@ fn config_farm(farm_id_string string, network_farm string) Params {
 			farm_id_string
 	}
 
-	// Decode the result from grid proxy into json format
-	result_get_proxy_farm := http.get_text(grid_url_farm)
-	decoded_farm := json2.raw_decode(result_get_proxy_farm) or {
-		eprintln(err_json)
-		return params_farm
-	}
-
-	string_farm := decoded_farm.str()
-
-	// Count number of IP addresses for the given farm
-	iter_ip := string_farm.count(s_ip)
+	// Count the number of "ip" iteration in the json (string)
+	iter_ip := http.get_text(grid_url_farm).count(s_ip)
 
 	// Add the number of IP addresses in the farm params
 	params_farm.kwarg_add(s_pub_ip_input, iter_ip.str())
@@ -437,21 +434,17 @@ fn config_nodes(grid_url_node string) ([]Params, string) {
 					if is_int(node_id) && node_id_u32 >= 1 {
 						// Query grid proxy to get the information of the node
 						result_get_proxy := http.get_text(grid_url_node + node_id)
-						decoded := json2.raw_decode(result_get_proxy) or {
+
+						mut decoded := json.decode(Node_json, result_get_proxy) or {
 							eprintln(err_json + err_internet)
 							return param_array, farm_id_string
 						}
 
-						// Decode the json as map to filter information
-						m := decoded.as_map()
-
 						// If it's the first 3node of the series, store the farm ID in a string
 						if node_nb == '1' {
 							// Get the farm ID associated with the node
-							farm_id := m[s_farm_id] or {
-								eprintln(err_json + err_node_network)
-								return param_array, farm_id_string
-							}
+							farm_id := decoded.farmid
+
 							farm_id_string = farm_id.str()
 						}
 
@@ -462,28 +455,21 @@ fn config_nodes(grid_url_node string) ([]Params, string) {
 						params_node.kwarg_add(s_id, node_id)
 
 						// Get twinID status
-						twinid := m[s_twin_id] or {
-							eprintln(err_json)
-							return param_array, farm_id_string
-						}
+						twinid := decoded.twinid
 
 						// Add the twin id associated with the node ID in node params
 						params_node.kwarg_add(s_twin_id_input, twinid.str())
 
 						// Get dedicated status
-						dedicated := m[s_dedicated] or {
-							eprintln(err_json)
-							return param_array, farm_id_string
-						}
+						dedicated := decoded.dedicated
+
 						if dedicated.str() == s_true {
 							params_node.kwarg_add(s_dedicated, s_true)
 						}
 
 						// Get certification status
-						certified := m[s_cert_type] or {
-							eprintln(err_json)
-							return param_array, farm_id_string
-						}
+						certified := decoded.certificationtype
+
 						if certified.str() == s_certified {
 							params_node.kwarg_add(s_cert, s_true)
 						} else {
@@ -491,17 +477,12 @@ fn config_nodes(grid_url_node string) ([]Params, string) {
 						}
 
 						// Check if there are public configurations
-						public_config := m[s_pub_config_json] or {
-							eprintln(err_json)
-							return param_array, farm_id_string
-						}
-						p_str := public_config.str()
+						public_config := decoded.publicconfig
 
-						if p_str.contains(gw4) && p_str.contains(gw6) && p_str.contains(ipv4)
-							&& p_str.contains(ipv6) {
-							params_node.kwarg_add(s_pub_config, s_false)
-						} else {
+						if public_config.ipv4 != '' || public_config.ipv6 != '' || public_config.gw4 != '' || public_config.gw6 != '' {
 							params_node.kwarg_add(s_pub_config, s_true)
+						} else {
+							params_node.kwarg_add(s_pub_config, s_false)
 						}
 
 						break
@@ -552,7 +533,6 @@ fn config_nodes(grid_url_node string) ([]Params, string) {
 			println(err_int_gt_one)
 			println(s_no_entry)
 		}
-
 	}
 	return param_array, farm_id_string
 }
