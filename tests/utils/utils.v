@@ -8,8 +8,10 @@ import freeflowuniverse.crystallib.params { Params }
 
 import threefoldtech.farmerbot.factory { Farmerbot }
 import threefoldtech.farmerbot.manager { PowerManager }
-import threefoldtech.farmerbot.system { Capacity, Node, PowerState, ZosPool, ZosResourcesStatistics }
+import threefoldtech.farmerbot.system { Capacity, Node, PowerState, RmbResponse, ZosPool, ZosResources, ZosResourcesStatistics }
 
+import encoding.base64
+import json
 import math
 import os
 
@@ -33,21 +35,21 @@ pub fn (mut t TfChainMock) 	active_rent_contract_for_node(nodeid u32) !u64 {
 
 // TODO add some mock code 
 pub struct ZosMock {
+pub mut:
+	running bool
+	messages chan RmbResponse
 }
-pub fn (mut z ZosMock) zos_has_public_config(dst u32) !bool {
-	return true
+pub fn (mut z ZosMock) run() {
 }
-pub fn (mut z ZosMock) get_zos_statistics(dst u32) !ZosResourcesStatistics {
-	return ZosResourcesStatistics {}
+pub fn (mut z ZosMock) has_public_config(dsts []u32, exp u64) ! {
 }
-pub fn (mut z ZosMock) get_zos_system_version(dst u32) !string {
-	return ""
+pub fn (mut z ZosMock) get_statistics(dsts []u32, exp u64) ! {
 }
-pub fn (mut z ZosMock) get_zos_wg_ports(dst u32) ![]u16 {
-	return []
+pub fn (mut z ZosMock) get_system_version(dsts []u32, exp u64) ! {
 }
-pub fn (mut z ZosMock) get_storage_pools(dst u32) ![]ZosPool {
-	return []
+pub fn (mut z ZosMock) get_wg_ports(dsts []u32, exp u64) ! {
+}
+pub fn (mut z ZosMock) get_storage_pools(dsts []u32, exp u64) ! {
 }
 
 pub type Test = fn (mut TestEnvironment) !
@@ -77,21 +79,61 @@ pub fn run_test(name string, test Test) ! {
 	os.setenv("FARMERBOT_LOG_CONSOLE", "FALSE", true)
 	
 	mut tfchain_mock := &TfChainMock {}
-	mut zos_mock := &ZosMock {}
+	mut zos_mock := &ZosMock {
+		messages: chan RmbResponse {cap: 100}
+	}
 	mut logger := system.logger()
+	mut managers := map[string]&manager.Manager{}
+	mut db := &system.DB {
+		farm: &system.Farm {}
+	}
+	mut data_manager := &manager.DataManager{
+		client: client.new(redis_address)!
+		db: db
+		logger: logger
+		tfchain: tfchain_mock
+		zos: zos_mock
+		timeout_rmb_response: 1
+	}
+	mut farm_manager := &manager.FarmManager{
+		client: client.new(redis_address)!
+		db: db
+		logger: logger
+		tfchain: tfchain_mock
+		zos: zos_mock
+	}
+	mut node_manager := &manager.NodeManager{
+		client: client.new(redis_address)!
+		db: db
+		logger: logger
+		tfchain: tfchain_mock
+		zos: zos_mock
+	}
+	mut power_manager := &manager.PowerManager{
+		client: client.new(redis_address)!
+		db: db
+		logger: logger
+		tfchain: tfchain_mock
+		zos: zos_mock
+	}
+
+	// ADD NEW MANAGERS HERE
+	managers['datamanager'] = data_manager
+	managers['farmmanager'] = farm_manager
+	managers['nodemanager'] = node_manager
+	managers['powermanager'] = power_manager
+
 	mut f := &Farmerbot {
 		redis_address: redis_address
 		path: testpath
-		db: &system.DB {
-			farm: &system.Farm {}
-		}
+		db: db
 		logger: logger
 		tfchain: tfchain_mock
 		zos: zos_mock
 		processor: processor.new(redis_address, logger)!
-		actionrunner: actionrunner.ActionRunner {
-			client: &Client {}
-		}
+		actionrunner: actionrunner.new(client.new(redis_address)!, [farm_manager, node_manager,
+		power_manager])
+		managers: managers
 	}
 	f.init() or {
 		return error("Failed creating farmerbot: $err")
@@ -136,6 +178,11 @@ pub fn run_test(name string, test Test) ! {
 	f.actionrunner.running = false
 	t_ar.wait()
 	t_pr.wait()
+}
+
+pub fn (mut t TestEnvironment) datamanager_update() ! {
+	mut datamanager := t.farmerbot.get_manager("datamanager")!
+	datamanager.update()
 }
 
 pub fn (mut t TestEnvironment) powermanager_update() ! {
@@ -234,4 +281,51 @@ pub fn ensure_error_message(job &ActionJob, expected_error string) ! {
 			return error("Expected error \"${expected_error}\", job is not in error state but in state ${job.state}.")
 		}
 	}	
+}
+
+pub fn rmb_response_system_version(twin_id u32) RmbResponse {
+	return RmbResponse {
+			cmd: "zos.system.version"
+			dat: "doesn't really matter"
+			src: "${twin_id}"
+	}
+}
+
+pub fn rmb_response_public_config(twin_id u32) RmbResponse {
+	return RmbResponse {
+			cmd: "zos.network.public_config_get"
+			dat: "doesn't really matter"
+			src: "${twin_id}"
+	}
+}
+
+pub fn rmb_response_statistics(twin_id u32, used ZosResources, sys ZosResources, total ZosResources) RmbResponse {
+	stats := ZosResourcesStatistics{
+		used: used
+		system: sys
+		total: total
+	}
+	return RmbResponse {
+			cmd: "zos.statistics.get"
+			dat: base64.encode_str(json.encode(stats))
+			src: "${twin_id}"
+	}
+}
+
+pub fn rmb_response_storage_pools(twin_id u32) RmbResponse {
+	pools := []ZosPool{	}
+	return RmbResponse {
+			cmd: "zos.storage.pools"
+			dat: base64.encode_str(json.encode(pools))
+			src: "${twin_id}"
+	}
+}
+
+pub fn equals_statistics(a Capacity, b ZosResources) bool {
+	return a == Capacity {
+		cru: b.cru
+		sru: b.sru
+		mru: b.mru
+		hru: b.hru
+	}
 }

@@ -51,14 +51,14 @@ fn (mut n NodeManager) data_set(mut action actions.Action) ! {
 	n.logger.info('${manager.node_manager_prefix} Executing action: DATA_SET')
 	n.logger.debug('${manager.node_manager_prefix} ${action}')
 
-	twinid := action.params.get_u32('twinid')!
+	twin_id := action.params.get_u32('twinid')!
 	cpu_overprovision := action.params.get_u8_default('cpuoverprovision', 1)!
 	if cpu_overprovision < 1 || cpu_overprovision > 4 {
 		return error('cpuoverprovision should be a value between 1 and 4')
 	}
 	mut node := Node{
 		id: action.params.get_u32('id')!
-		twinid: twinid
+		twin_id: twin_id
 		description: action.params.get_default('description', '')!
 		resources: system.ConsumableResources{
 			overprovision_cpu: cpu_overprovision

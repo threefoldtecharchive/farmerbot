@@ -57,7 +57,7 @@ fn (mut f Farmerbot) update() {
 	}
 }
 
-pub fn (mut f Farmerbot) init_db() ! {
+pub fn (mut f Farmerbot) init() ! {
 	f.logger.info('Initializing database')
 	f.db.nodes = map[u32]&system.Node{}
 	f.db.farm = &system.Farm{}
@@ -80,57 +80,11 @@ pub fn (mut f Farmerbot) init_db() ! {
 	f.logger.debug('${f.db.nodes}')
 }
 
-fn (mut f Farmerbot) init_managers() ! {
-	f.logger.info('Initializing managers')
-	f.managers = map[string]&manager.Manager{}
-	mut data_manager := &manager.DataManager{
-		client: client.new(f.redis_address)!
-		db: f.db
-		logger: f.logger
-		tfchain: f.tfchain
-		zos: f.zos
-	}
-	mut farm_manager := &manager.FarmManager{
-		client: client.new(f.redis_address)!
-		db: f.db
-		logger: f.logger
-		tfchain: f.tfchain
-		zos: f.zos
-	}
-	mut node_manager := &manager.NodeManager{
-		client: client.new(f.redis_address)!
-		db: f.db
-		logger: f.logger
-		tfchain: f.tfchain
-		zos: f.zos
-	}
-	mut power_manager := &manager.PowerManager{
-		client: client.new(f.redis_address)!
-		db: f.db
-		logger: f.logger
-		tfchain: f.tfchain
-		zos: f.zos
-	}
-
-	// ADD NEW MANAGERS HERE
-	f.managers['datamanager'] = data_manager
-	f.managers['farmmanager'] = farm_manager
-	f.managers['nodemanager'] = node_manager
-	f.managers['powermanager'] = power_manager
-
-	f.actionrunner = actionrunner.new(client.new(f.redis_address)!, [farm_manager, node_manager,
-		power_manager])
-}
-
-pub fn (mut f Farmerbot) init() ! {
-	f.init_managers()!
-	f.init_db() or { return error('Failed initializing the database: ${err}') }
-}
-
 pub fn (mut f Farmerbot) run() ! {
 	f.running = true
 	f.on_started()
 	spawn (&f).update()
+	spawn (*f.zos).run()
 	spawn (&f.actionrunner).run()
 	t := spawn (&f.processor).run()
 	f.logger.info('Farmerbot up and running (version: ${system.version})')
@@ -142,6 +96,7 @@ pub fn (mut f Farmerbot) shutdown() {
 	f.logger.info('Shutting down')
 	f.on_stop()
 	f.actionrunner.running = false
+	f.zos.running = false
 	f.processor.running = false
 	f.running = false
 }
@@ -152,22 +107,63 @@ pub fn (mut f Farmerbot) on_sigint(signal Signal) {
 
 pub fn new(path string, grid3_http_address string, redis_address string) !&Farmerbot {
 	mut logger := system.logger()
+	mut zos_rmbpeer := system.new_zosrmbpeer(redis_address, logger)!
+	mut db := &system.DB{
+		farm: &system.Farm{}
+	}
+	mut zos := &system.IZos(zos_rmbpeer)
+	mut tfchain := &system.TfChain{
+		address: grid3_http_address
+	}
+	mut managers := map[string]&manager.Manager{}
+	mut data_manager := &manager.DataManager{
+		client: client.new(redis_address)!
+		db: db
+		logger: logger
+		tfchain: tfchain
+		zos: zos
+	}
+	mut farm_manager := &manager.FarmManager{
+		client: client.new(redis_address)!
+		db: db
+		logger: logger
+		tfchain: tfchain
+		zos: zos
+	}
+	mut node_manager := &manager.NodeManager{
+		client: client.new(redis_address)!
+		db: db
+		logger: logger
+		tfchain: tfchain
+		zos: zos
+	}
+	mut power_manager := &manager.PowerManager{
+		client: client.new(redis_address)!
+		db: db
+		logger: logger
+		tfchain: tfchain
+		zos: zos
+	}
+
+	// ADD NEW MANAGERS HERE
+	managers['datamanager'] = data_manager
+	managers['farmmanager'] = farm_manager
+	managers['nodemanager'] = node_manager
+	managers['powermanager'] = power_manager
+
 	mut f := &Farmerbot{
 		redis_address: redis_address
 		path: path
-		db: &system.DB{
-			farm: &system.Farm{}
-		}
-		tfchain: &system.TfChain{
-			address: grid3_http_address
-		}
-		zos: &system.IZos(system.new_zosrmbpeer(redis_address)!)
+		db: db
+		tfchain: tfchain
+		zos: zos
 		logger: logger
 		processor: processor.new(redis_address, logger)!
-		actionrunner: actionrunner.ActionRunner{
-			client: &client.Client{}
-		}
+		actionrunner: actionrunner.new(client.new(redis_address)!, [farm_manager, node_manager,
+		power_manager])
+		managers: managers
 	}
+
 	f.init() or {
 		f.logger.error('${err}')
 		return err
