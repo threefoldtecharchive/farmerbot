@@ -1,0 +1,8 @@
+version: '3.9'
+services:
+    run:
+        container_name: file_creator_container
+        image: file_creator_image:1.0
+        command: -ti
+        volumes:
+            - .:/farmerbot
