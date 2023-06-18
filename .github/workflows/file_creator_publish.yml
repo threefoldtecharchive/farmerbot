@@ -26,6 +26,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
+          context: file_creator
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=semver,pattern={{version}}
@@ -34,6 +35,6 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
-          context: file_creator
+          context: .
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
