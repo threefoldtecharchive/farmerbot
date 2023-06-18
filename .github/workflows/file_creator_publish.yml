@@ -1,4 +1,4 @@
-name: Publish 
+name: Publish File Creator
 
 on:
   release:
