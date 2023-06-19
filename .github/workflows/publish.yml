@@ -7,6 +7,13 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        include:
+          - dockerfile: ./Dockerfile
+            image: ghcr.io/${{ github.repository }}/farmerbot_image
+          - dockerfile: ./file_creator/Dockerfile
+            image: ghcr.io/${{ github.repository }}/file_creator_image
     permissions:
       contents: read
       packages: write
@@ -26,7 +33,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ${{ matrix.image }}
           tags: |
             type=semver,pattern={{version}}
 
@@ -35,5 +42,6 @@ jobs:
         with:
           push: true
           context: .
+          file: ${{ matrix.dockerfile }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
