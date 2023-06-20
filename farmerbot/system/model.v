@@ -32,8 +32,8 @@ pub enum PowerState as u8 {
 pub struct Node {
 pub mut:
 	id                           u32
-	twinid                       u32
-	farmid                       u32
+	twin_id                       u32
+	farm_id                       u32
 	description                  string
 	certified                    bool
 	dedicated                    bool
@@ -130,8 +130,18 @@ pub mut:
 	farm                  &Farm
 }
 
-pub fn (d &DB) get_node(nodeid u32) !&Node {
-	return d.nodes[nodeid] or {
-		return error('The farmerbot is not managing the node with id ${nodeid}')
+pub fn (d &DB) get_node(node_id u32) !&Node {
+	return d.nodes[node_id] or {
+		return error('The farmerbot is not managing the node with id ${node_id}')
 	}
+}
+
+pub fn (d &DB) get_node_by_twin_id(twin_id u32) !&Node {
+	nodes := d.nodes.values().filter(it.twin_id == twin_id)
+	if nodes.len == 0 {
+		return error('The farmerbot is not managing the node with twin id ${twin_id}')
+	} else if nodes.len > 1 {
+		return error('Multiple nodes with twin id ${twin_id}, that should not be possible')
+	}
+	return nodes[0]
 }
