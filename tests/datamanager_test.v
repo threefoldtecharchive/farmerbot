@@ -9,8 +9,6 @@ import threefoldtech.farmerbot.factory { Farmerbot }
 import threefoldtech.farmerbot.system { RmbResponse, ZosResources }
 
 
-
-
 fn test_no_node_responds() {
 	run_test("test_no_node_responds",
 		fn (mut t TestEnvironment) ! {

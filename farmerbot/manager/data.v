@@ -21,15 +21,12 @@ mut:
 	logger  &log.Logger
 	tfchain &ITfChain
 	zos     &IZos
-	timeout_rmb_response u64 = 120
+	timeout_rmb_response u64 = 120 // nodes have 2 minutes to respond to the requests
 }
 
 pub fn (mut d DataManager) on_started() {
-	/*
-	for nodeid in d.db.nodes.keys() {
-		d.ping_node(nodeid)
-	}
-	*/
+	mut node_twin_ids := d.db.nodes.values().map(it.twin_id)
+	d.await_responses(mut node_twin_ids)
 }
 
 pub fn (mut d DataManager) on_stop() {
@@ -44,36 +41,49 @@ pub fn (mut d DataManager) execute(mut job jobs.ActionJob) ! {
 }
 
 pub fn (mut d DataManager) update() {
-	d.batch_update_data()
-}
-
-fn (mut d DataManager) batch_update_data() {
-	mut twin_ids := d.db.nodes.values().map(it.twin_id)
+	mut node_twin_ids := d.db.nodes.values().map(it.twin_id)
 	// update resources for nodes that have no claimed resources
 	update_resources_node_ids := d.db.nodes.values().filter(it.timeout_claimed_resources <= time.now()).map(it.id)
 	update_resources_twin_ids := d.db.nodes.values().filter(it.timeout_claimed_resources <= time.now()).map(it.twin_id)
+	d.batch_ping_nodes(node_twin_ids)
+	d.batch_get_statistics(update_resources_twin_ids)
+	d.batch_get_storage_pools(update_resources_twin_ids)
+	d.batch_has_public_config(update_resources_twin_ids)
+	d.update_has_rent_contract(update_resources_node_ids)
+	d.await_responses(mut node_twin_ids)
+}
 
-	// we ping all of them but updating resources for some of them
-	d.zos.get_system_version(twin_ids, d.timeout_rmb_response) or {
+fn (mut d DataManager) batch_ping_nodes(node_twin_ids []u32) {
+	d.zos.get_system_version(node_twin_ids, d.timeout_rmb_response) or {
 		d.logger.error('${manager.data_manager_prefix} Failed send get_system_version message: ${err}')
 		return
 	}
+}
 
-	d.zos.get_statistics(update_resources_twin_ids, d.timeout_rmb_response) or {
+fn (mut d DataManager) batch_get_statistics(node_twin_ids []u32) {
+	d.zos.get_statistics(node_twin_ids, d.timeout_rmb_response) or {
 		d.logger.error('${manager.data_manager_prefix} Failed send get_zos_statistics message: ${err}')
 		return
 	}
-	d.zos.get_storage_pools(update_resources_twin_ids, d.timeout_rmb_response) or {
+}
+
+fn (mut d DataManager) batch_get_storage_pools(node_twin_ids []u32) {
+	d.zos.get_storage_pools(node_twin_ids, d.timeout_rmb_response) or {
 		d.logger.error('${manager.data_manager_prefix} Failed send get_storage_pools message: ${err}')
 		return
 	}
-	d.zos.has_public_config(update_resources_twin_ids, d.timeout_rmb_response) or {
+}
+
+fn (mut d DataManager) batch_has_public_config(node_twin_ids []u32) {
+	d.zos.has_public_config(node_twin_ids, d.timeout_rmb_response) or {
 		d.logger.error('${manager.data_manager_prefix} Failed send has_public_config message: ${err}')
 		return
 	}
+}
 
-	// update if they have rent contract (done through tfchain)
-	for node_id in update_resources_node_ids {
+// update if they have rent contract (done through tfchain)
+fn (mut d DataManager) update_has_rent_contract(node_ids []u32) {
+	for node_id in node_ids {
 		mut node := d.db.nodes[node_id] or {
 			d.logger.error('${manager.data_manager_prefix} Unknown node_id ${node_id}')
 			continue
@@ -84,7 +94,9 @@ fn (mut d DataManager) batch_update_data() {
 		}
 		node.has_active_rent_contract = rent_contract != 0
 	}
+}
 
+fn (mut d DataManager) await_responses(mut node_twin_ids []u32) {
 	// check for incoming message from RMB
 	start := time.now()
 	for time.now()-start <= time.second * int(d.timeout_rmb_response) {
@@ -125,17 +137,16 @@ fn (mut d DataManager) batch_update_data() {
 					}
 				}
 				// remove from list so that we know which nodes we were able to contact
-				twin_ids = twin_ids.filter(it != node.twin_id)
+				node_twin_ids = node_twin_ids.filter(it != node.twin_id)
 			}
 			1 * time.second {
 			}
 		}
 	}
 
-
 	// update state
 	for node in d.db.nodes.values() {
-		if node.twin_id in twin_ids {
+		if node.twin_id in node_twin_ids {
 			// got no messages from that node
 			d.update_powerstate(node.id, false)
 		} else {
@@ -143,7 +154,6 @@ fn (mut d DataManager) batch_update_data() {
 			d.update_powerstate(node.id, true)
 		}
 	}
-
 }
 
 fn (mut d DataManager) update_powerstate(node_id u32, got_response bool) {

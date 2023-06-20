@@ -80,7 +80,7 @@ pub fn run_test(name string, test Test) ! {
 	
 	mut tfchain_mock := &TfChainMock {}
 	mut zos_mock := &ZosMock {
-		messages: chan RmbResponse {cap: 100}
+		messages: chan RmbResponse {cap: 1000}
 	}
 	mut logger := system.logger()
 	mut managers := map[string]&manager.Manager{}

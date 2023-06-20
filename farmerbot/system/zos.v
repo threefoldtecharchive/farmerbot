@@ -8,6 +8,10 @@ import log
 import rand
 import time
 
+const (
+	capacity_zos_message_channel = 1000
+)
+
 pub struct RmbMessage {
 pub mut:
 	ver int = 1
@@ -116,7 +120,7 @@ pub fn new_zosrmbpeer(redis_address string, logger &log.Logger) !ZosRMBPeer {
 		message_queue: rand.uuid_v4()
 		redis: redisclient.get(redis_address)!
 		logger: unsafe { logger }
-		messages: chan RmbResponse { }
+		messages: chan RmbResponse { cap: capacity_zos_message_channel }
 	}
 }
 
