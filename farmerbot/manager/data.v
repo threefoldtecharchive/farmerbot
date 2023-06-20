@@ -26,7 +26,8 @@ mut:
 
 pub fn (mut d DataManager) on_started() {
 	mut node_twin_ids := d.db.nodes.values().map(it.twin_id)
-	d.await_responses(mut node_twin_ids)
+	d.batch_ping_nodes(node_twin_ids)
+	d.handle_responses(mut node_twin_ids)
 }
 
 pub fn (mut d DataManager) on_stop() {
@@ -45,12 +46,15 @@ pub fn (mut d DataManager) update() {
 	// update resources for nodes that have no claimed resources
 	update_resources_node_ids := d.db.nodes.values().filter(it.timeout_claimed_resources <= time.now()).map(it.id)
 	update_resources_twin_ids := d.db.nodes.values().filter(it.timeout_claimed_resources <= time.now()).map(it.twin_id)
+	// we ping all nodes (even the ones with claimed resources)
 	d.batch_ping_nodes(node_twin_ids)
+	// we do not update the resources for the nodes that have claimed resources because those resources should not be overwritten until the timeout
 	d.batch_get_statistics(update_resources_twin_ids)
 	d.batch_get_storage_pools(update_resources_twin_ids)
 	d.batch_has_public_config(update_resources_twin_ids)
-	d.update_has_rent_contract(update_resources_node_ids)
-	d.await_responses(mut node_twin_ids)
+	d.batch_update_has_rent_contract(update_resources_node_ids)
+	// handle all responses and modify state of the nodes
+	d.handle_responses(mut node_twin_ids)
 }
 
 fn (mut d DataManager) batch_ping_nodes(node_twin_ids []u32) {
@@ -82,7 +86,7 @@ fn (mut d DataManager) batch_has_public_config(node_twin_ids []u32) {
 }
 
 // update if they have rent contract (done through tfchain)
-fn (mut d DataManager) update_has_rent_contract(node_ids []u32) {
+fn (mut d DataManager) batch_update_has_rent_contract(node_ids []u32) {
 	for node_id in node_ids {
 		mut node := d.db.nodes[node_id] or {
 			d.logger.error('${manager.data_manager_prefix} Unknown node_id ${node_id}')
@@ -96,7 +100,7 @@ fn (mut d DataManager) update_has_rent_contract(node_ids []u32) {
 	}
 }
 
-fn (mut d DataManager) await_responses(mut node_twin_ids []u32) {
+fn (mut d DataManager) handle_responses(mut node_twin_ids []u32) {
 	// check for incoming message from RMB
 	start := time.now()
 	for time.now()-start <= time.second * int(d.timeout_rmb_response) {
@@ -144,7 +148,7 @@ fn (mut d DataManager) await_responses(mut node_twin_ids []u32) {
 		}
 	}
 
-	// update state
+	// update state: if we didn't get any response => node is offline
 	for node in d.db.nodes.values() {
 		if node.twin_id in node_twin_ids {
 			// got no messages from that node

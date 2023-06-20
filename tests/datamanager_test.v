@@ -8,6 +8,7 @@ import freeflowuniverse.crystallib.params { Params }
 import threefoldtech.farmerbot.factory { Farmerbot }
 import threefoldtech.farmerbot.system { RmbResponse, ZosResources }
 
+import time
 
 fn test_no_node_responds() {
 	run_test("test_no_node_responds",
@@ -102,6 +103,123 @@ fn test_node_resources_update() {
 				assert equals_statistics(node.resources.system, sys)
 				assert node.public_ips_used == 1
 			}
+		}
+	)!
+}
+
+// We simulate a successful wakeup: the node has answered our ping so the state should be changed to on. 
+fn test_state_wakeup() {
+	run_test("test_state_wakeup",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			mut node_5 := t.farmerbot.db.get_node(5)!
+			node_5.powerstate = .wakingup
+			t.zos_mock.messages <- rmb_response_system_version(node_5.twin_id)
+
+			//act
+			t.datamanager_update()!
+
+			// assert
+			node_5 = t.farmerbot.db.get_node(5)!
+			assert node_5.powerstate == .on
+		}
+	)!
+}
+
+// We simulate a wakeup that is still in progress: the node does not answer yet but the timeout is not yet exceeded. The state should still be wakingup. 
+fn test_state_wakeup_still_in_progress() {
+	run_test("test_state_wakeup_still_in_progress",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			mut node_5 := t.farmerbot.db.get_node(5)!
+			node_5.powerstate = .wakingup
+			node_5.last_time_powerstate_changed = time.now()
+
+			//act
+			t.datamanager_update()!
+
+			// assert
+			node_5 = t.farmerbot.db.get_node(5)!
+			assert node_5.powerstate == .wakingup
+		}
+	)!
+}
+
+// No message received after 30 minutes means the wakeup failed so the powerstate should be set to off.
+fn test_state_wakeup_failed() {
+	run_test("test_state_wakeup_failed",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			mut node_5 := t.farmerbot.db.get_node(5)!
+			node_5.powerstate = .wakingup
+			node_5.last_time_powerstate_changed = time.now().add(-time.minute * 30)
+
+			//act
+			t.datamanager_update()!
+
+			// assert
+			node_5 = t.farmerbot.db.get_node(5)!
+			assert node_5.powerstate == .off
+		}
+	)!
+}
+
+// The node does no longer answer the calls so the shutdown was a success. The state should be off
+fn test_state_shutdown() {
+	run_test("test_state_shutdown",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			mut node_5 := t.farmerbot.db.get_node(5)!
+			node_5.powerstate = .shuttingdown
+
+			//act
+			t.datamanager_update()!
+
+			// assert
+			node_5 = t.farmerbot.db.get_node(5)!
+			assert node_5.powerstate == .off
+		}
+	)!
+}
+
+// We simulate a shutdown in progress: the timeout of 30 minutes is not yet exceeded and the node is still responding to our calls.
+// The state should stay intact
+fn test_state_shutdown_still_in_progress() {
+	run_test("test_state_shutdown_still_in_progress",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			mut node_5 := t.farmerbot.db.get_node(5)!
+			node_5.powerstate = .shuttingdown
+			node_5.last_time_powerstate_changed = time.now()
+			// still receiving the message but 
+			t.zos_mock.messages <- rmb_response_system_version(node_5.twin_id)
+
+			//act
+			t.datamanager_update()!
+
+			// assert
+			node_5 = t.farmerbot.db.get_node(5)!
+			assert node_5.powerstate == .shuttingdown
+		}
+	)!
+}
+
+// The node is still answering our calls after 30 minutes: failure of shutdown so the state be back to on
+fn test_state_shutdown_failed() {
+	run_test("test_state_wakeup_failed",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			mut node_5 := t.farmerbot.db.get_node(5)!
+			node_5.powerstate = .shuttingdown
+			node_5.last_time_powerstate_changed = time.now().add(-time.minute * 30)
+			t.zos_mock.messages <- rmb_response_system_version(node_5.twin_id)
+
+			//act
+			t.datamanager_update()!
+
+			// assert
+			node_5 = t.farmerbot.db.get_node(5)!
+			assert node_5.powerstate == .on
 		}
 	)!
 }
