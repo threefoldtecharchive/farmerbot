@@ -136,13 +136,14 @@ pub mut:
 pub fn (mut z ZosRMBPeer) run() {
 	z.running = true
 	for z.running {
-		response_json := z.redis.blpop([z.message_queue], 5) or {
+		response_json := z.redis.brpop([z.message_queue], 5) or {
 			continue
 		}
 		if response_json.len != 2 || response_json[1] == '' {
 			// no message in queue 
 			continue
 		}
+		z.logger.debug("Received message: ${response_json[1]}")
 		rmb_response := json.decode(RmbResponse, response_json[1]) or {
 			z.logger.error("Failed decoding RmbResponse: ${response_json[1]}")
 			continue
@@ -162,7 +163,7 @@ pub fn (mut z ZosRMBPeer) rmb_client_request(cmd string, dsts []u32, data string
 		ret: z.message_queue
 		now: u64(start.unix_time())
 	}
-	request := json.encode_pretty(msg)
+	request := json.encode(msg)
 	z.redis.lpush('msgbus.system.local', request)!
 }
 

@@ -59,28 +59,28 @@ pub fn (mut d DataManager) update() {
 
 fn (mut d DataManager) batch_ping_nodes(node_twin_ids []u32) {
 	d.zos.get_system_version(node_twin_ids, d.timeout_rmb_response) or {
-		d.logger.error('${manager.data_manager_prefix} Failed send get_system_version message: ${err}')
+		d.logger.error('${manager.data_manager_prefix} Failed to send get_system_version message: ${err}')
 		return
 	}
 }
 
 fn (mut d DataManager) batch_get_statistics(node_twin_ids []u32) {
 	d.zos.get_statistics(node_twin_ids, d.timeout_rmb_response) or {
-		d.logger.error('${manager.data_manager_prefix} Failed send get_zos_statistics message: ${err}')
+		d.logger.error('${manager.data_manager_prefix} Failed to send get_zos_statistics message: ${err}')
 		return
 	}
 }
 
 fn (mut d DataManager) batch_get_storage_pools(node_twin_ids []u32) {
 	d.zos.get_storage_pools(node_twin_ids, d.timeout_rmb_response) or {
-		d.logger.error('${manager.data_manager_prefix} Failed send get_storage_pools message: ${err}')
+		d.logger.error('${manager.data_manager_prefix} Failed to send get_storage_pools message: ${err}')
 		return
 	}
 }
 
 fn (mut d DataManager) batch_has_public_config(node_twin_ids []u32) {
 	d.zos.has_public_config(node_twin_ids, d.timeout_rmb_response) or {
-		d.logger.error('${manager.data_manager_prefix} Failed send has_public_config message: ${err}')
+		d.logger.error('${manager.data_manager_prefix} Failed to send has_public_config message: ${err}')
 		return
 	}
 }
