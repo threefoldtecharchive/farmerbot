@@ -137,7 +137,6 @@ pub fn (mut z ZosRMBPeer) run() {
 	z.running = true
 	for z.running {
 		response_json := z.redis.blpop([z.message_queue], 5) or {
-			z.logger.error('Failed to pop from message queue ${z.message_queue}')
 			continue
 		}
 		if response_json.len != 2 || response_json[1] == '' {

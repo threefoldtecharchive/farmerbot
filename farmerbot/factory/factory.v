@@ -82,12 +82,12 @@ pub fn (mut f Farmerbot) init() ! {
 
 pub fn (mut f Farmerbot) run() ! {
 	f.running = true
-	f.on_started()
 	spawn (&f).update()
 	spawn (*f.zos).run()
 	spawn (&f.actionrunner).run()
 	t := spawn (&f.processor).run()
 	f.logger.info('Farmerbot up and running (version: ${system.version})')
+	f.on_started()
 	t.wait()
 	f.logger.info('Shutdown successful')
 }
