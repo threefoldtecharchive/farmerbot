@@ -110,7 +110,7 @@ fn (mut d DataManager) handle_responses(mut node_twin_ids []u32) {
 					d.logger.error('${manager.data_manager_prefix} ${err}')
 					continue
 				}
-				match message.cmd {
+				match message.ref {
 					'zos.system.version' {
 						message.parse_system_version() or {
 							continue
@@ -137,7 +137,10 @@ fn (mut d DataManager) handle_responses(mut node_twin_ids []u32) {
 						node.pools = storage_pools
 					}
 					else {
-						d.logger.warn('${manager.data_manager_prefix} Unknown command ${message.cmd}')
+						if message.ref != '' {
+							d.logger.warn('${manager.data_manager_prefix} Unknown command ${message.ref}')
+						}
+						continue
 					}
 				}
 				// remove from list so that we know which nodes we were able to contact

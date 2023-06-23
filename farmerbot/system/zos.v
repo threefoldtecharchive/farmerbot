@@ -36,7 +36,6 @@ pub struct RmbResponse {
 pub mut:
 	ver int = 1
 	ref string
-	cmd string
 	dat string
 	src string
 	now u64
@@ -157,6 +156,7 @@ pub fn (mut z ZosRMBPeer) rmb_client_request(cmd string, dsts []u32, data string
 	msg := RmbMessage{
 		ver: 1
 		cmd: cmd
+		ref: cmd
 		exp: exp
 		dat: base64.encode_str(data)
 		dst: dsts
