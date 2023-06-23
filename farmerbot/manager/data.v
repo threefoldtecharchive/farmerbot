@@ -25,9 +25,7 @@ mut:
 }
 
 pub fn (mut d DataManager) on_started() {
-	mut node_twin_ids := d.db.nodes.values().map(it.twin_id)
-	d.batch_ping_nodes(node_twin_ids)
-	d.handle_responses(mut node_twin_ids)
+	
 }
 
 pub fn (mut d DataManager) on_stop() {

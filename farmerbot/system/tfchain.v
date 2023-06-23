@@ -43,7 +43,7 @@ pub fn (mut t TfChain) set_node_power(node_id u32, state PowerState) ! {
 		return error('Failed to send: ${err}')
 	}
 	if response.err != '' {
-		return error('${response.err}')
+		return error('Error while calling set_node_power: ${response.err}')
 	}
 }
 
@@ -58,7 +58,7 @@ pub fn (mut t TfChain) active_rent_contract_for_node(nodeid u32) !u64 {
 		return error('Failed to send: ${err}')
 	}
 	if response.err != '' {
-		return error('${response.err}')
+		return error('Error while calling active_rent_contract_for_node: ${response.err}')
 	}
 	if response.data == '' {
 		return 0
