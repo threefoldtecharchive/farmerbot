@@ -11,9 +11,9 @@ jobs:
       matrix:
         include:
           - dockerfile: ./Dockerfile
-            image: ghcr.io/${{ github.repository }}/farmerbot_image
+            image: ghcr.io/${{ github.repository }}
           - dockerfile: ./file_creator/Dockerfile
-            image: ghcr.io/${{ github.repository }}/file_creator_image
+            image: ghcr.io/${{ github.repository }}_config
     permissions:
       contents: read
       packages: write
