@@ -285,7 +285,7 @@ pub fn ensure_error_message(job &ActionJob, expected_error string) ! {
 
 pub fn rmb_response_system_version(twin_id u32) RmbResponse {
 	return RmbResponse {
-			cmd: "zos.system.version"
+			ref: "zos.system.version"
 			dat: "doesn't really matter"
 			src: "${twin_id}"
 	}
@@ -293,7 +293,7 @@ pub fn rmb_response_system_version(twin_id u32) RmbResponse {
 
 pub fn rmb_response_public_config(twin_id u32) RmbResponse {
 	return RmbResponse {
-			cmd: "zos.network.public_config_get"
+			ref: "zos.network.public_config_get"
 			dat: "doesn't really matter"
 			src: "${twin_id}"
 	}
@@ -306,7 +306,7 @@ pub fn rmb_response_statistics(twin_id u32, used ZosResources, sys ZosResources,
 		total: total
 	}
 	return RmbResponse {
-			cmd: "zos.statistics.get"
+			ref: "zos.statistics.get"
 			dat: base64.encode_str(json.encode(stats))
 			src: "${twin_id}"
 	}
@@ -315,7 +315,7 @@ pub fn rmb_response_statistics(twin_id u32, used ZosResources, sys ZosResources,
 pub fn rmb_response_storage_pools(twin_id u32) RmbResponse {
 	pools := []ZosPool{	}
 	return RmbResponse {
-			cmd: "zos.storage.pools"
+			ref: "zos.storage.pools"
 			dat: base64.encode_str(json.encode(pools))
 			src: "${twin_id}"
 	}
