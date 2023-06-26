@@ -11,7 +11,7 @@ import time
 const (
 	power_manager_prefix     = '[POWERMANAGER]'
 	periodic_wakeup_duration = time.minute * 30
-	timeout_power_job = 5.0 // timeout is in seconds
+	timeout_power_job = 10.0 // timeout is in seconds
 )
 
 [heap]
