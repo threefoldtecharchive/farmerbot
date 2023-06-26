@@ -98,8 +98,8 @@ fn (mut d DataManager) batch_update_has_rent_contract(node_ids []u32) {
 	}
 }
 
+// check for incoming messages from RMB
 fn (mut d DataManager) handle_responses(mut node_twin_ids []u32) {
-	// check for incoming message from RMB
 	start := time.now()
 	for time.now()-start <= time.second * int(d.timeout_rmb_response) {
 		select {

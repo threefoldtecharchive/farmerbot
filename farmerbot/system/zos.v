@@ -117,7 +117,8 @@ mut:
 pub fn new_zosrmbpeer(redis_address string, logger &log.Logger) !ZosRMBPeer {
 	return ZosRMBPeer{
 		message_queue: rand.uuid_v4()
-		redis: redisclient.get(redis_address)!
+		redis_request: redisclient.get(redis_address)!
+		redis_response: redisclient.get(redis_address)!
 		logger: unsafe { logger }
 		messages: chan RmbResponse { cap: capacity_zos_message_channel }
 	}
@@ -129,13 +130,15 @@ pub mut:
 	message_queue string
 	running bool
 	messages chan RmbResponse
-	redis redisclient.Redis
+	// we need two redis connections here because redis is not threadsafe so we use one to send requests and the other to get responses
+	redis_response redisclient.Redis
+	redis_request redisclient.Redis
 }
 
 pub fn (mut z ZosRMBPeer) run() {
 	z.running = true
 	for z.running {
-		response_json := z.redis.brpop([z.message_queue], 5) or {
+		response_json := z.redis_response.brpop([z.message_queue], 5) or {
 			continue
 		}
 		if response_json.len != 2 || response_json[1] == '' {
@@ -164,7 +167,7 @@ pub fn (mut z ZosRMBPeer) rmb_client_request(cmd string, dsts []u32, data string
 		now: u64(start.unix_time())
 	}
 	request := json.encode(msg)
-	z.redis.lpush('msgbus.system.local', request)!
+	z.redis_request.lpush('msgbus.system.local', request)!
 }
 
 pub fn (mut z ZosRMBPeer) has_public_config(dsts []u32, exp u64) ! {
