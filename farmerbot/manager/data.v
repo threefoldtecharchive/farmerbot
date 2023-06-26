@@ -111,6 +111,7 @@ fn (mut d DataManager) handle_responses(mut node_twin_ids []u32) {
 				match message.ref {
 					'zos.system.version' {
 						message.parse_system_version() or {
+							d.logger.error('${manager.data_manager_prefix} Failed to get system version of node ${node.id}: ${err}')
 							continue
 						}
 					}
@@ -136,7 +137,7 @@ fn (mut d DataManager) handle_responses(mut node_twin_ids []u32) {
 					}
 					else {
 						if message.ref != '' {
-							d.logger.warn('${manager.data_manager_prefix} Unknown command ${message.ref}')
+							d.logger.warn('${manager.data_manager_prefix} Unknown command ${message.ref}, cannot handle message:\n${message}')
 						}
 						continue
 					}

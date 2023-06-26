@@ -145,7 +145,6 @@ pub fn (mut z ZosRMBPeer) run() {
 			// no message in queue 
 			continue
 		}
-		z.logger.debug("Received message: ${response_json[1]}")
 		rmb_response := json.decode(RmbResponse, response_json[1]) or {
 			z.logger.error("Failed decoding RmbResponse: ${response_json[1]}")
 			continue
