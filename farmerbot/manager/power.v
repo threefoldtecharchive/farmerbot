@@ -88,7 +88,7 @@ fn (mut p PowerManager) periodic_wakeup() {
 			node.times_random_wakeups = 0
 		}
 		if periodic_wakeup_start <= now && node.last_time_awake < periodic_wakeup_start {
-			// Periodic wakeup
+			// Fixed periodic wakeup (once a day)
 			// we wakeup the node if the periodic wakeup start time has started and only if the last time the node was awake 
 			// was before the periodic wakeup start of that day
 			p.logger.info('${manager.power_manager_prefix} Periodic wakeup for node ${node.id}')
@@ -102,8 +102,8 @@ fn (mut p PowerManager) periodic_wakeup() {
 				break
 			}
 		} else if node.times_random_wakeups < p.random_wakeups_a_month && rand.int31() % (8928/p.random_wakeups_a_month) == 0 {
-			// Random wakeup 10 times a month (on average)
-			// we execute this code 8928 times a month (every 5 minutes) so if we want to randomly wakeup 10 times a month we should
+			// Random periodic wakeup (10 times a month on average)
+			// we execute this code 8928 times a month on average (every 5 minutes) so if we want to randomly wakeup 10 times a month we should
 			// wakeup a node every 893th time we go through this code but we want it randomly so we generate a random number between
 			// 0 and 893. If it is 0 we do the random wakeup
 			p.logger.info('${manager.power_manager_prefix} Random wakeup for node ${node.id}')
