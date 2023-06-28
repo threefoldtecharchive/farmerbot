@@ -115,6 +115,7 @@ pub fn run_test(name string, test Test) ! {
 		logger: logger
 		tfchain: tfchain_mock
 		zos: zos_mock
+		random_wakeups_a_month: 0
 	}
 
 	// ADD NEW MANAGERS HERE

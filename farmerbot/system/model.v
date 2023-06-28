@@ -32,8 +32,8 @@ pub enum PowerState as u8 {
 pub struct Node {
 pub mut:
 	id                           u32
-	twin_id                       u32
-	farm_id                       u32
+	twin_id                      u32
+	farm_id                      u32
 	description                  string
 	certified                    bool
 	dedicated                    bool
@@ -47,6 +47,7 @@ pub mut:
 	last_time_powerstate_changed Time
 	last_time_awake              Time
 	never_shutdown               bool
+	times_random_wakeups         int 
 }
 
 pub fn (mut n Node) update_resources(zos_stats &ZosResourcesStatistics) {

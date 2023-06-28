@@ -5,12 +5,15 @@ import freeflowuniverse.baobab.client
 import freeflowuniverse.baobab.jobs
 import freeflowuniverse.crystallib.params { Params }
 import threefoldtech.farmerbot.system { Capacity, ITfChain, IZos, Node }
+
 import log
+import rand
 import time
 
 const (
 	power_manager_prefix     = '[POWERMANAGER]'
 	periodic_wakeup_duration = time.minute * 30
+	default_random_wakeups_a_month = 10
 	timeout_power_job = 10.0 // timeout is in seconds
 )
 
@@ -23,6 +26,7 @@ mut:
 	logger  &log.Logger
 	tfchain &ITfChain
 	zos     &IZos
+	random_wakeups_a_month int = manager.default_random_wakeups_a_month
 }
 
 pub fn (mut p PowerManager) on_started() {
@@ -79,19 +83,39 @@ fn (mut p PowerManager) periodic_wakeup() {
 	today := time.new_time(year: now.year, month: now.month, day: now.day)
 	periodic_wakeup_start := today.add(p.db.periodic_wakeup_start)
 	mut amount_wakeup_calls := 0
-	if periodic_wakeup_start <= now {
-		for mut node in p.db.nodes.values().filter(it.powerstate == .off) {
-			if node.last_time_awake < periodic_wakeup_start {
-				p.logger.info('${manager.power_manager_prefix} Periodic wakeup for node ${node.id}')
-				p.schedule_power_job(node.id, .on) or {
-					p.logger.error('${manager.power_manager_prefix} Job to power on node ${node.id} failed: ${err}')
-					continue
-				}
-				amount_wakeup_calls += 1
-				if amount_wakeup_calls >= p.db.periodic_wakeup_limit {
-					// reboot X nodes at a time others will be rebooted 5 min later
-					break
-				}
+	for mut node in p.db.nodes.values().filter(it.powerstate == .off) {
+		if now.day == 1 {
+			node.times_random_wakeups = 0
+		}
+		if periodic_wakeup_start <= now && node.last_time_awake < periodic_wakeup_start {
+			// Fixed periodic wakeup (once a day)
+			// we wakeup the node if the periodic wakeup start time has started and only if the last time the node was awake 
+			// was before the periodic wakeup start of that day
+			p.logger.info('${manager.power_manager_prefix} Periodic wakeup for node ${node.id}')
+			p.schedule_power_job(node.id, .on) or {
+				p.logger.error('${manager.power_manager_prefix} Job to power on node ${node.id} failed: ${err}')
+				continue
+			}
+			amount_wakeup_calls += 1
+			if amount_wakeup_calls >= p.db.periodic_wakeup_limit {
+				// reboot X nodes at a time others will be rebooted 5 min later
+				break
+			}
+		} else if node.times_random_wakeups < p.random_wakeups_a_month && rand.int31() % (8928/p.random_wakeups_a_month) == 0 {
+			// Random periodic wakeup (10 times a month on average)
+			// we execute this code 8928 times a month on average (every 5 minutes) so if we want to randomly wakeup 10 times a month we should
+			// wakeup a node every 893th time we go through this code but we want it randomly so we generate a random number between
+			// 0 and 893. If it is 0 we do the random wakeup
+			p.logger.info('${manager.power_manager_prefix} Random wakeup for node ${node.id}')
+			p.schedule_power_job(node.id, .on) or {
+				p.logger.error('${manager.power_manager_prefix} Job to power on node ${node.id} failed: ${err}')
+				continue
+			}
+			amount_wakeup_calls += 1
+			node.times_random_wakeups += 1
+			if amount_wakeup_calls >= p.db.periodic_wakeup_limit {
+				// reboot X nodes at a time others will be rebooted 5 min later
+				break
 			}
 		}
 	}
