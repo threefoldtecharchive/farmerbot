@@ -41,6 +41,7 @@ pub mut:
 	public_ips_used              u64
 	resources                    ConsumableResources
 	pools                        []ZosPool
+	gpus                         []ZosGPU
 	has_active_rent_contract     bool
 	powerstate                   PowerState
 	timeout_claimed_resources    Time

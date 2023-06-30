@@ -26,9 +26,8 @@ pub mut:
 pub fn (mut n NodeManager) on_started() {
 }
 
-pub fn (mut n NodeManager) on_stop() {	
+pub fn (mut n NodeManager) on_stop() {
 }
-
 
 pub fn (mut n NodeManager) init(mut action actions.Action) ! {
 	if action.name == system.action_node_define {
@@ -82,11 +81,18 @@ fn (mut n NodeManager) data_set(mut action actions.Action) ! {
 fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	n.logger.info('${manager.node_manager_prefix} Executing job: FIND_NODE')
 
+	mut has_gpus := job.args.get_u8_default('has_gpus', 0)!
+	gpu_vendors := job.args.get_list_default('gpu_vendors', []string{}) or {
+		return error("Invalid list gpu_vendors: ${err}")
+	}
+	gpu_devices := job.args.get_list_default('gpu_devices', []string{}) or {
+		return error("Invalid list gpu_devices: ${err}")
+	}
 	certified := job.args.get_default_false('certified')
 	public_config := job.args.get_default_false('public_config')
 	public_ips := job.args.get_u32_default('public_ips', 0)!
 	dedicated := job.args.get_default_false('dedicated')
-	node_exclude := job.args.get_list_u32('node_exclude')!
+	node_exclude := job.args.get_list_u32_default('node_exclude', []u32{})
 	required_capacity := system.Capacity{
 		hru: job.args.get_storagecapacity_in_bytes_default('required_hru', 0)!
 		sru: job.args.get_storagecapacity_in_bytes_default('required_sru', 0)!
@@ -94,7 +100,12 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 		cru: job.args.get_u64_default('required_cru', 0)!
 	}
 
-	n.logger.debug('${manager.node_manager_prefix} Requirements:\ncertified:${certified}\npublic_config:${public_config}\npublic_ips:${public_ips}\ndedicated:${dedicated}\nnode_exclude:${node_exclude}\nrequired_capacity:${required_capacity}')
+	if (gpu_vendors.len > 0 || gpu_devices.len > 0) && has_gpus == 0 {
+		// at least one gpu in case the user didn't provide the amount
+		has_gpus = 1
+	}
+
+	n.logger.debug('${manager.node_manager_prefix} Requirements:\ncertified:${certified}\npublic_config:${public_config}\npublic_ips:${public_ips}\ndedicated:${dedicated}\nnode_exclude:${node_exclude}\nrequired_capacity:${required_capacity}\nhas_gpus:${has_gpus}\ngpu_vendor:${gpu_vendors}\ngpu_device:${gpu_devices}')
 
 	if public_ips > 0 {
 		mut public_ips_used_by_nodes := u64(0)
@@ -108,6 +119,18 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 
 	mut possible_nodes := []&Node{}
 	for node in n.db.nodes.values() {
+		if has_gpus > 0 {
+			mut gpus := node.gpus.clone()
+			if gpu_vendors.len > 0 {
+				gpus = gpus.filter(it.vendor.contains_any_substr(gpu_vendors))
+			}
+			if gpu_devices.len > 0 {
+				gpus = gpus.filter(it.device.contains_any_substr(gpu_devices))
+			}
+			if gpus.len < has_gpus {
+				continue
+			}
+		}
 		if certified && !node.certified {
 			continue
 		}

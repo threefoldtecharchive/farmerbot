@@ -2,14 +2,48 @@ module main
 
 import threefoldtech.farmerbot.system
 
+import log
 import flag
 import os
-
+import time
 
 fn do(redis_address string, cmd string, src u32, dst u32) ! {
-	mut zos_rmbpeer := system.new_zosrmbpeer(redis_address)!
-	response_json := zos_rmbpeer.rmb_client_request(cmd, dst)!
-	println(response_json)
+	mut logger := &log.Log{ level:.debug}
+	mut zos_rmbpeer := system.new_zosrmbpeer(redis_address, logger)!
+	t := spawn (&zos_rmbpeer).run()
+	zos_rmbpeer.rmb_client_request(cmd, [dst], "", 300)!
+	select {
+		message := <-zos_rmbpeer.messages {
+			match message.ref {
+				'zos.system.version' {
+					version := message.parse_system_version()!
+					println(version)
+				}
+				'zos.network.public_config_get' {
+					public_config := message.parse_has_public_config()!
+					println(public_config)
+				}
+				'zos.statistics.get' {
+					stats := message.parse_statistics()!
+					println(stats)
+				}
+				'zos.storage.pools' {
+					storage_pools := message.parse_storage_pools()!
+					println(storage_pools)
+				}
+				'zos.gpu.list' {
+					gpus := message.parse_gpus()!
+					println(gpus)
+				}
+				else {
+					return error('Unknown msg ${message}')
+				}
+			}
+		}
+		60 * time.second {}
+	}
+	zos_rmbpeer.running = false
+	t.wait()
 }
 
 pub fn main() {

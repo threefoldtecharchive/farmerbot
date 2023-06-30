@@ -51,6 +51,8 @@ pub fn (mut z ZosMock) get_wg_ports(dsts []u32, exp u64) ! {
 }
 pub fn (mut z ZosMock) get_storage_pools(dsts []u32, exp u64) ! {
 }
+pub fn (mut z ZosMock) get_gpus(dsts []u32, exp u64) ! {
+}
 
 pub type Test = fn (mut TestEnvironment) !
 
@@ -136,6 +138,9 @@ pub fn run_test(name string, test Test) ! {
 		power_manager])
 		managers: managers
 	}
+	// to proceed the shutting down of the server (more computation though)
+	f.actionrunner.timeout_waiting_actors = 0.01
+	f.processor.timeout_waiting_queues = 0.01
 	f.init() or {
 		return error("Failed creating farmerbot: $err")
 	}
