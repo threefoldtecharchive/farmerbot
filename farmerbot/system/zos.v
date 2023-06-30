@@ -1,7 +1,6 @@
 module system
 
 import freeflowuniverse.crystallib.redisclient
-
 import encoding.base64
 import json
 import log
@@ -78,6 +77,13 @@ pub fn (r &RmbResponse) parse_wg_ports() ![]u16 {
 	return json.decode([]u16, base64.decode_str(r.dat))
 }
 
+pub fn (r &RmbResponse) parse_gpus() ![]ZosGPU {
+	if r.err.message != '' {
+		return error('${r.err.message}')
+	}
+	return json.decode([]ZosGPU, base64.decode_str(r.dat))
+}
+
 pub struct ZosResources {
 pub mut:
 	cru   u64
@@ -102,9 +108,17 @@ pub mut:
 	used      int
 }
 
+pub struct ZosGPU {
+pub mut:
+	id       string
+	vendor   string
+	device   string
+	contract u64
+}
+
 pub interface IZos {
 mut:
-	running bool 
+	running bool
 	messages chan RmbResponse
 	run()
 	has_public_config(dsts []u32, exp u64) !
@@ -112,6 +126,7 @@ mut:
 	get_system_version(dsts []u32, exp u64) !
 	get_wg_ports(dsts []u32, exp u64) !
 	get_storage_pools(dsts []u32, exp u64) !
+	get_gpus(dsts []u32, exp u64) !
 }
 
 pub fn new_zosrmbpeer(redis_address string, logger &log.Logger) !ZosRMBPeer {
@@ -120,33 +135,31 @@ pub fn new_zosrmbpeer(redis_address string, logger &log.Logger) !ZosRMBPeer {
 		redis_request: redisclient.get(redis_address)!
 		redis_response: redisclient.get(redis_address)!
 		logger: unsafe { logger }
-		messages: chan RmbResponse { cap: capacity_zos_message_channel }
+		messages: chan RmbResponse{cap: system.capacity_zos_message_channel}
 	}
 }
 
 pub struct ZosRMBPeer {
 pub mut:
-	logger  &log.Logger
+	logger        &log.Logger
 	message_queue string
-	running bool
-	messages chan RmbResponse
+	running       bool
+	messages      chan RmbResponse
 	// we need two redis connections here because redis is not threadsafe so we use one to send requests and the other to get responses
 	redis_response redisclient.Redis
-	redis_request redisclient.Redis
+	redis_request  redisclient.Redis
 }
 
 pub fn (mut z ZosRMBPeer) run() {
 	z.running = true
 	for z.running {
-		response_json := z.redis_response.brpop([z.message_queue], 5) or {
-			continue
-		}
+		response_json := z.redis_response.brpop([z.message_queue], 5) or { continue }
 		if response_json.len != 2 || response_json[1] == '' {
-			// no message in queue 
+			// no message in queue
 			continue
 		}
 		rmb_response := json.decode(RmbResponse, response_json[1]) or {
-			z.logger.error("Failed decoding RmbResponse: ${response_json[1]}")
+			z.logger.error('Failed decoding RmbResponse: ${response_json[1]}')
 			continue
 		}
 		z.messages <- rmb_response
@@ -154,7 +167,7 @@ pub fn (mut z ZosRMBPeer) run() {
 }
 
 pub fn (mut z ZosRMBPeer) rmb_client_request(cmd string, dsts []u32, data string, exp u64) ! {
-	start := time.now()  
+	start := time.now()
 	msg := RmbMessage{
 		ver: 1
 		cmd: cmd
@@ -170,21 +183,25 @@ pub fn (mut z ZosRMBPeer) rmb_client_request(cmd string, dsts []u32, data string
 }
 
 pub fn (mut z ZosRMBPeer) has_public_config(dsts []u32, exp u64) ! {
-	z.rmb_client_request('zos.network.public_config_get', dsts, "", exp)!
+	z.rmb_client_request('zos.network.public_config_get', dsts, '', exp)!
 }
 
 pub fn (mut z ZosRMBPeer) get_statistics(dsts []u32, exp u64) ! {
-	z.rmb_client_request('zos.statistics.get', dsts, "", exp)!
+	z.rmb_client_request('zos.statistics.get', dsts, '', exp)!
 }
 
 pub fn (mut z ZosRMBPeer) get_system_version(dsts []u32, exp u64) ! {
-	z.rmb_client_request('zos.system.version', dsts, "", exp)!
+	z.rmb_client_request('zos.system.version', dsts, '', exp)!
 }
 
 pub fn (mut z ZosRMBPeer) get_wg_ports(dsts []u32, exp u64) ! {
-	z.rmb_client_request('zos.network.list_wg_ports', dsts, "", exp)!
+	z.rmb_client_request('zos.network.list_wg_ports', dsts, '', exp)!
 }
 
 pub fn (mut z ZosRMBPeer) get_storage_pools(dsts []u32, exp u64) ! {
-	z.rmb_client_request('zos.storage.pools', dsts, "", exp)!
+	z.rmb_client_request('zos.storage.pools', dsts, '', exp)!
+}
+
+pub fn (mut z ZosRMBPeer) get_gpus(dsts []u32, exp u64) ! {
+	z.rmb_client_request('zos.gpu.list', dsts, '', exp)!
 }

@@ -16,20 +16,18 @@ const (
 pub struct DataManager {
 	name string = 'farmerbot.datamanager'
 mut:
-	client  client.Client
-	db      &system.DB
-	logger  &log.Logger
-	tfchain &ITfChain
-	zos     &IZos
+	client               client.Client
+	db                   &system.DB
+	logger               &log.Logger
+	tfchain              &ITfChain
+	zos                  &IZos
 	timeout_rmb_response u64 = 120 // nodes have 2 minutes to respond to the requests
 }
 
 pub fn (mut d DataManager) on_started() {
-	
 }
 
 pub fn (mut d DataManager) on_stop() {
-	
 }
 
 pub fn (mut d DataManager) init(mut action actions.Action) ! {
@@ -50,6 +48,7 @@ pub fn (mut d DataManager) update() {
 	d.batch_get_statistics(update_resources_twin_ids)
 	d.batch_get_storage_pools(update_resources_twin_ids)
 	d.batch_has_public_config(update_resources_twin_ids)
+	d.batch_get_gpus(update_resources_twin_ids)
 	d.batch_update_has_rent_contract(update_resources_node_ids)
 	// handle all responses and modify state of the nodes
 	d.handle_responses(mut node_twin_ids)
@@ -83,6 +82,13 @@ fn (mut d DataManager) batch_has_public_config(node_twin_ids []u32) {
 	}
 }
 
+fn (mut d DataManager) batch_get_gpus(node_twin_ids []u32) {
+	d.zos.get_gpus(node_twin_ids, d.timeout_rmb_response) or {
+		d.logger.error('${manager.data_manager_prefix} Failed to send get_gpus message: ${err}')
+		return
+	}
+}
+
 // update if they have rent contract (done through tfchain)
 fn (mut d DataManager) batch_update_has_rent_contract(node_ids []u32) {
 	for node_id in node_ids {
@@ -101,7 +107,7 @@ fn (mut d DataManager) batch_update_has_rent_contract(node_ids []u32) {
 // check for incoming messages from RMB
 fn (mut d DataManager) handle_responses(mut node_twin_ids []u32) {
 	start := time.now()
-	for time.now()-start <= time.second * int(d.timeout_rmb_response) {
+	for time.now() - start <= time.second * int(d.timeout_rmb_response) {
 		select {
 			message := <-d.zos.messages {
 				mut node := d.db.get_node_by_twin_id(message.src.u32()) or {
@@ -135,6 +141,13 @@ fn (mut d DataManager) handle_responses(mut node_twin_ids []u32) {
 						}
 						node.pools = storage_pools
 					}
+					'zos.gpu.list' {
+						gpus := message.parse_gpus() or {
+							d.logger.error('${manager.data_manager_prefix} Failed to update gpu list ${node.id}: ${err}')
+							continue
+						}
+						node.gpus = gpus
+					}
 					else {
 						if message.ref != '' {
 							d.logger.warn('${manager.data_manager_prefix} Unknown command ${message.ref}, cannot handle message:\n${message}')
@@ -145,8 +158,7 @@ fn (mut d DataManager) handle_responses(mut node_twin_ids []u32) {
 				// remove from list so that we know which nodes we were able to contact
 				node_twin_ids = node_twin_ids.filter(it != node.twin_id)
 			}
-			1 * time.second {
-			}
+			1 * time.second {}
 		}
 	}
 

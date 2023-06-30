@@ -7,7 +7,7 @@ import utils {
 import freeflowuniverse.baobab.client { Client }
 import freeflowuniverse.crystallib.params { Params }
 import threefoldtech.farmerbot.factory { Farmerbot }
-import threefoldtech.farmerbot.system 
+import threefoldtech.farmerbot.system { ZosGPU }
 
 // Test finding a node with minimal required resources
 fn test_find_node_required_resources() {
@@ -229,6 +229,206 @@ fn test_find_node_with_everything() {
 		}
 	)!
 }
+
+// Test finding a node with gpu, we don't care about what vendor nor device nor required resources
+fn test_find_node_with_gpu() {
+	run_test("test_find_node_with_gpu",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			t.farmerbot.db.get_node(8)!.gpus << ZosGPU {
+				vendor: 'Advanced Micro Devices, Inc. [AMD/ATI]'
+				device: 'Navi 31 [Radeon RX 7900 XT/7900 XTX]'
+			}
+			mut args := Params {}
+			args.kwarg_add("has_gpus", "1")
+
+			// act
+			mut job := t.client.job_new_wait(
+				twinid: t.client.twinid
+				action: system.job_node_find
+				args: args
+				actionsource: ""
+			) or {
+				return error("failed to create and wait for job")
+			}
+
+			// assert
+			ensure_no_error(&job)!
+			ensure_result_contains_u32(&job, "nodeid", 8)!
+		}
+	)!
+}
+
+// Test finding a node with gpu, we require 2 gpus
+fn test_find_node_with_2_gpus() {
+	run_test("test_find_node_with_2_gpus",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			t.farmerbot.db.get_node(3)!.gpus << ZosGPU {
+				vendor: 'Advanced Micro Devices, Inc. [AMD/ATI]'
+				device: 'Navi 31 [Radeon RX 7900 XT/7900 XTX]'
+			}
+			t.farmerbot.db.get_node(8)!.gpus << ZosGPU {
+				vendor: 'Advanced Micro Devices, Inc. [AMD/ATI]'
+				device: 'Navi 31 [Radeon RX 7900 XT/7900 XTX]'
+			}
+			t.farmerbot.db.get_node(8)!.gpus << ZosGPU {
+				vendor: 'Advanced Micro Devices, Inc. [AMD/ATI]'
+				device: 'Navi 31 [Radeon RX 7900 XT/7900 XTX]'
+			}
+			mut args := Params {}
+			args.kwarg_add("has_gpus", "2")
+
+			// act
+			mut job := t.client.job_new_wait(
+				twinid: t.client.twinid
+				action: system.job_node_find
+				args: args
+				actionsource: ""
+			) or {
+				return error("failed to create and wait for job")
+			}
+
+			// assert
+			ensure_no_error(&job)!
+			ensure_result_contains_u32(&job, "nodeid", 8)!
+		}
+	)!
+}
+
+// Test finding a node with gpu, we require 2 gpus and no one has 2 gpus
+fn test_find_node_with_2_gpus_fails() {
+	run_test("test_find_node_with_2_gpus_fails",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			t.farmerbot.db.get_node(3)!.gpus << ZosGPU {
+				vendor: 'Advanced Micro Devices, Inc. [AMD/ATI]'
+				device: 'Navi 31 [Radeon RX 7900 XT/7900 XTX]'
+			}
+
+			mut args := Params {}
+			args.kwarg_add("has_gpus", "2")
+
+			// act
+			mut job := t.client.job_new_wait(
+				twinid: t.client.twinid
+				action: system.job_node_find
+				args: args
+				actionsource: ""
+			) or {
+				return error("failed to create and wait for job")
+			}
+
+			// assert
+			ensure_error_message(&job, "Could not find a suitable node")!
+		}
+	)!
+}
+
+// Test finding a node with gpu from specific vendor
+fn test_find_node_with_gpu_from_specific_vendor() {
+	run_test("test_find_node_with_gpu_from_specific_vendor",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			t.farmerbot.db.get_node(3)!.gpus << ZosGPU {
+				vendor: 'Advanced Micro Devices, Inc. [AMD/ATI]'
+				device: 'Navi 31 [Radeon RX 7900 XT/7900 XTX]'
+			}
+			t.farmerbot.db.get_node(8)!.gpus << ZosGPU {
+				vendor: 'NVIDIA Corporation GA107BM'
+				device: 'GeForce RTX 3050 Ti Mobile'
+			}
+			mut args := Params {}
+			args.kwarg_add("gpu_vendors", '["NVIDIA"]')
+
+			// act
+			mut job := t.client.job_new_wait(
+				twinid: t.client.twinid
+				action: system.job_node_find
+				args: args
+				actionsource: ""
+			) or {
+				return error("failed to create and wait for job")
+			}
+
+			// assert
+			ensure_no_error(&job)!
+			ensure_result_contains_u32(&job, "nodeid", 8)!
+		}
+	)!
+}
+
+// Test finding a node with a specific gpu
+fn test_find_node_with_specific_gpu() {
+	run_test("test_find_node_with_specific_gpu",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			t.farmerbot.db.get_node(3)!.gpus << ZosGPU {
+				vendor: 'Advanced Micro Devices, Inc. [AMD/ATI]'
+				device: 'Navi 31 [Radeon RX 7900 XT/7900 XTX]'
+			}
+			t.farmerbot.db.get_node(8)!.gpus << ZosGPU {
+				vendor: 'NVIDIA Corporation GA107BM'
+				device: 'GeForce RTX 3050 Ti Mobile'
+			}
+			mut args := Params {}
+			args.kwarg_add("gpu_devices", '["GeForce RTX 3050", "GeForce RTX 3060", "GeForce RTX 3070"]')
+
+			// act
+			mut job := t.client.job_new_wait(
+				twinid: t.client.twinid
+				action: system.job_node_find
+				args: args
+				actionsource: ""
+			) or {
+				return error("failed to create and wait for job")
+			}
+
+			// assert
+			ensure_no_error(&job)!
+			ensure_result_contains_u32(&job, "nodeid", 8)!
+		}
+	)!
+}
+
+// Test finding a node with at least two nodes of specific kind
+fn test_find_node_with_2_nodes_of_specific_kind() {
+	run_test("test_find_node_with_2_nodes_of_specific_kind",
+		fn (mut t TestEnvironment) ! {
+			// prepare
+			t.farmerbot.db.get_node(3)!.gpus << ZosGPU {
+				vendor: 'Advanced Micro Devices, Inc. [AMD/ATI]'
+				device: 'Navi 31 [Radeon RX 7900 XT/7900 XTX]'
+			}
+			t.farmerbot.db.get_node(8)!.gpus << ZosGPU {
+				vendor: 'Advanced Micro Devices, Inc. [AMD/ATI]'
+				device: 'Navi 31 [Radeon RX 7900 XT/7900 XTX]'
+			}
+			t.farmerbot.db.get_node(8)!.gpus << ZosGPU {
+				vendor: 'Advanced Micro Devices, Inc. [AMD/ATI]'
+				device: 'Navi 31 [Radeon RX 7900 XT/7900 XTX]'
+			}
+			mut args := Params {}
+			args.kwarg_add("has_gpus", "2")
+			args.kwarg_add("gpu_devices", '["Radeon RX 7900"]')
+
+			// act
+			mut job := t.client.job_new_wait(
+				twinid: t.client.twinid
+				action: system.job_node_find
+				args: args
+				actionsource: ""
+			) or {
+				return error("failed to create and wait for job")
+			}
+
+			// assert
+			ensure_no_error(&job)!
+			ensure_result_contains_u32(&job, "nodeid", 8)!
+		}
+	)!
+}
+
 
 // Test finding a node with overprovisioning 
 // node 3 has overprovisioning set to 2 (8 cores * 2 => 16 cores available)
