@@ -36,6 +36,9 @@ __farmerbot.nodemanager.findnode__
 This job allows you to look for a node with specific requirements (minimum amount of resources, public config, etc). You will get the job id as a result. The farmerbot will power on the node if the node is off. It will also claim the required resources for 30 minutes. After that, if the user has not deployed anything on the node the resources will be freed and the node might go down again if it was put on by that job.
 
 Arguments (all arguments are optional and ):
+- _has_gpus_ => if you require one or more gpus you can filter on that with this parameter (should be a positive value)
+- _gpu_vendors_ => a list of strings that will be used to filter the nodes on gpu vendor (for example AMD)
+- _gpu_devices_ => a list of strings that will be used to filter the nodes on gpu device (for example GTX 1080)
 - _certified_ => whether or not you want a certified node (not adding this argument means you don't care whether you get a certified or non certified node)
 - _public_config_ => whether or not you want a node with a public config (not adding this argument means you don't care whether or not the node has a public config)
 - _public_ips_ => how much public ips you need
