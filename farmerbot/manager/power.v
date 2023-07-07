@@ -30,7 +30,6 @@ mut:
 }
 
 pub fn (mut p PowerManager) on_started() {
-	// power on all nodes on start of farmerbot
 	p.logger.info("${manager.power_manager_prefix} Startup proces: powering on all nodes that are down.")
 	p.poweron_all_nodes()
 }

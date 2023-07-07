@@ -113,8 +113,11 @@ fn test_find_node_dedicated() {
 			}
 
 			// assert
+			
 			ensure_no_error(&job)!
 			ensure_result_contains_u32(&job, "nodeid", 20)!
+			resources_node_20 := t.farmerbot.db.get_node(20)!.resources
+			assert resources_node_20.used == resources_node_20.total, "All resources should be claimed when asking for a dedicated node!"
 		}
 	)!
 }
@@ -255,6 +258,8 @@ fn test_find_node_with_gpu() {
 			// assert
 			ensure_no_error(&job)!
 			ensure_result_contains_u32(&job, "nodeid", 8)!
+			resources_node_8 := t.farmerbot.db.get_node(8)!.resources
+			assert resources_node_8.used == resources_node_8.total, "All resources should be claimed when asking for a gpu as the whole node should be rented!"
 		}
 	)!
 }

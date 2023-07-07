@@ -83,10 +83,10 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 
 	mut has_gpus := job.args.get_u8_default('has_gpus', 0)!
 	gpu_vendors := job.args.get_list_default('gpu_vendors', []string{}) or {
-		return error("Invalid list gpu_vendors: ${err}")
+		return error('Invalid list gpu_vendors: ${err}')
 	}
 	gpu_devices := job.args.get_list_default('gpu_devices', []string{}) or {
-		return error("Invalid list gpu_devices: ${err}")
+		return error('Invalid list gpu_devices: ${err}')
 	}
 	certified := job.args.get_default_false('certified')
 	public_config := job.args.get_default_false('public_config')
@@ -179,7 +179,7 @@ fn (mut n NodeManager) find_node(mut job jobs.ActionJob) ! {
 	// claim the resources until next update of the data
 	// add a timeout (30 minutes)
 	node.timeout_claimed_resources = time.now().add(time.minute * 30)
-	if dedicated {
+	if dedicated || has_gpus > 0 {
 		// claim all capacity
 		node.claim_resources(node.resources.total)
 	} else {
