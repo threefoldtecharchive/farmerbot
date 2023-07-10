@@ -23,6 +23,7 @@ fn find_job(mut redis redisclient.Redis, twinid u32, twinidfarm u32, mut cl clie
 	args.kwarg_add("required_cru", "2")
 	//args.kwarg_add("node_exclude", "[77]")
 	//args.kwarg_add("dedicated", "false")
+	//args.kwarg_add("has_gpus", "1")
 	mut j := jobs.new(
 			twinid: twinidfarm,
 			action: "farmerbot.nodemanager.findnode", 
