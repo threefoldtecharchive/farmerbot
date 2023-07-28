@@ -7,6 +7,7 @@ import freeflowuniverse.crystallib.params { Params }
 import threefoldtech.farmerbot.system { Capacity, ITfChain, IZos, Node }
 
 import log
+import math
 import rand
 import time
 
@@ -82,8 +83,11 @@ fn (mut p PowerManager) periodic_wakeup() {
 	today := time.new_time(year: now.year, month: now.month, day: now.day)
 	periodic_wakeup_start := today.add(p.db.periodic_wakeup_start)
 	mut amount_wakeup_calls := 0
+	amount_of_nodes := p.db.nodes.len
+	rwam := int(p.random_wakeups_a_month)
+	pwl := int(p.db.periodic_wakeup_limit)
 	for mut node in p.db.nodes.values().filter(it.powerstate == .off) {
-		if now.day == 1 {
+		if now.day == 1 && now.hour == 1 && now.minute >=0 && now.minute < 5 {
 			node.times_random_wakeups = 0
 		}
 		if periodic_wakeup_start <= now && node.last_time_awake < periodic_wakeup_start {
@@ -100,11 +104,13 @@ fn (mut p PowerManager) periodic_wakeup() {
 				// reboot X nodes at a time others will be rebooted 5 min later
 				break
 			}
-		} else if node.times_random_wakeups < p.random_wakeups_a_month && rand.int31() % (8928/p.random_wakeups_a_month) == 0 {
-			// Random periodic wakeup (10 times a month on average)
-			// we execute this code 8928 times a month on average (every 5 minutes) so if we want to randomly wakeup 10 times a month we should
-			// wakeup a node every 893th time we go through this code but we want it randomly so we generate a random number between
-			// 0 and 893. If it is 0 we do the random wakeup
+		} else if node.times_random_wakeups < p.random_wakeups_a_month && rand.int31() % ((8460 -  (rwam * 6) - (rwam * (amount_of_nodes - 1))/math.min(pwl, amount_of_nodes))/rwam) == 0 {
+			// Random periodic wakeup (10 times a month on average if the node is almost always down)
+			// we execute this code every 5 minutes => 288 times a day => 8640 times a month on average (30 days)
+			// but we have 30 minutues of periodic wakeup every day (6 times we do not go through this code) => so 282 times a day => 8460 times a month on average (30 days)
+			// as we do a random wakeup 10 times a month we know the node will be on for 30 minutes 10 times a month so we can substract 6 times the amount of random wakeups a month
+			// we also do not go through the code if we have woken up too many nodes at once => substract (10 * (n-1))/min(periodic_wakeup_limit, amount_of_nodes) from 8460
+			// now we can divide that by 10 and randomly generate a number in that range, if it's 0 we do the random wakeup
 			p.logger.info('${manager.power_manager_prefix} Random wakeup for node ${node.id}')
 			p.schedule_power_job(node.id, .on) or {
 				p.logger.error('${manager.power_manager_prefix} Job to power on node ${node.id} failed: ${err}')

@@ -40,7 +40,7 @@ fn do(redis_address string, cmd string, src u32, dst u32) ! {
 				}
 			}
 		}
-		60 * time.second {}
+		120 * time.second {}
 	}
 	zos_rmbpeer.running = false
 	t.wait()
