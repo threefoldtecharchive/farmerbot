@@ -161,7 +161,7 @@ pub fn new(path string, grid3_http_address string, redis_address string) !&Farme
 		logger: logger
 		processor: processor.new(redis_address, logger)!
 		actionrunner: actionrunner.new(client.new(redis_address)!, [farm_manager, node_manager,
-		power_manager])
+			power_manager])
 		managers: managers
 	}
 

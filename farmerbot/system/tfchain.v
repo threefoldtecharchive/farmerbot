@@ -6,6 +6,7 @@ import json
 const (
 	cost_extrinsic = 0.001
 )
+
 pub struct SetNodePowerArgs {
 pub mut:
 	node_id u32  [json: 'nodeId']
@@ -19,9 +20,9 @@ pub mut:
 
 pub struct Balance {
 pub mut:
-	free f64
+	free     f64
 	reserved f64
-	frozen  f64
+	frozen   f64
 }
 
 [heap]
@@ -53,10 +54,8 @@ pub fn (mut t TfChain) get_balance() !Balance {
 }
 
 pub fn (mut t TfChain) should_have_enough_balance() ! {
-	balance := t.get_balance() or {
-		return error('Failed to get balance: ${err}')
-	}
-	if balance.free < cost_extrinsic {
+	balance := t.get_balance() or { return error('Failed to get balance: ${err}') }
+	if balance.free < system.cost_extrinsic {
 		return error('Not enough balance. You need TFT to power on or off nodes.')
 	}
 }

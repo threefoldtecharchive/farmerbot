@@ -5,41 +5,39 @@ import freeflowuniverse.baobab.client
 import freeflowuniverse.baobab.jobs
 import freeflowuniverse.crystallib.params { Params }
 import threefoldtech.farmerbot.system { Capacity, ITfChain, IZos, Node }
-
 import log
 import math
 import rand
 import time
 
 const (
-	power_manager_prefix     = '[POWERMANAGER]'
-	periodic_wakeup_duration = time.minute * 30
+	power_manager_prefix           = '[POWERMANAGER]'
+	periodic_wakeup_duration       = time.minute * 30
 	default_random_wakeups_a_month = 10
-	timeout_power_job = 10.0 // timeout is in seconds
+	timeout_power_job              = 10.0 // timeout is in seconds
 )
 
 [heap]
 pub struct PowerManager {
 	name string = 'farmerbot.powermanager'
 mut:
-	client  client.Client
-	db      &system.DB
-	logger  &log.Logger
-	tfchain &ITfChain
-	zos     &IZos
+	client                 client.Client
+	db                     &system.DB
+	logger                 &log.Logger
+	tfchain                &ITfChain
+	zos                    &IZos
 	random_wakeups_a_month int = manager.default_random_wakeups_a_month
 }
 
 pub fn (mut p PowerManager) on_started() {
-	p.logger.info("${manager.power_manager_prefix} Startup proces: powering on all nodes that are down.")
+	p.logger.info('${manager.power_manager_prefix} Startup proces: powering on all nodes that are down.')
 	p.poweron_all_nodes()
 }
 
 pub fn (mut p PowerManager) on_stop() {
-	p.logger.info("${manager.power_manager_prefix} Shutdown proces: powering on all nodes that are down.")
-	p.poweron_all_nodes()	
+	p.logger.info('${manager.power_manager_prefix} Shutdown proces: powering on all nodes that are down.')
+	p.poweron_all_nodes()
 }
-
 
 pub fn (mut p PowerManager) init(mut action actions.Action) ! {
 	if action.name == system.action_power_configure {
@@ -71,7 +69,8 @@ pub fn (mut p PowerManager) update() {
 }
 
 fn (mut p PowerManager) poweron_all_nodes() {
-	for mut node in p.db.nodes.values().filter(it.powerstate == .off || it.powerstate == .shuttingdown) {
+	for mut node in p.db.nodes.values().filter(it.powerstate == .off
+		|| it.powerstate == .shuttingdown) {
 		p.schedule_power_job(node.id, .on) or {
 			p.logger.error('${manager.power_manager_prefix} Job to power on node ${node.id} failed: ${err}')
 		}
@@ -87,12 +86,12 @@ fn (mut p PowerManager) periodic_wakeup() {
 	rwam := int(p.random_wakeups_a_month)
 	pwl := int(p.db.periodic_wakeup_limit)
 	for mut node in p.db.nodes.values().filter(it.powerstate == .off) {
-		if now.day == 1 && now.hour == 1 && now.minute >=0 && now.minute < 5 {
+		if now.day == 1 && now.hour == 1 && now.minute >= 0 && now.minute < 5 {
 			node.times_random_wakeups = 0
 		}
 		if periodic_wakeup_start <= now && node.last_time_awake < periodic_wakeup_start {
 			// Fixed periodic wakeup (once a day)
-			// we wakeup the node if the periodic wakeup start time has started and only if the last time the node was awake 
+			// we wakeup the node if the periodic wakeup start time has started and only if the last time the node was awake
 			// was before the periodic wakeup start of that day
 			p.logger.info('${manager.power_manager_prefix} Periodic wakeup for node ${node.id}')
 			p.schedule_power_job(node.id, .on) or {
@@ -104,7 +103,8 @@ fn (mut p PowerManager) periodic_wakeup() {
 				// reboot X nodes at a time others will be rebooted 5 min later
 				break
 			}
-		} else if node.times_random_wakeups < p.random_wakeups_a_month && rand.int31() % ((8460 -  (rwam * 6) - (rwam * (amount_of_nodes - 1))/math.min(pwl, amount_of_nodes))/rwam) == 0 {
+		} else if node.times_random_wakeups < p.random_wakeups_a_month
+			&& rand.int31() % ((8460 - (rwam * 6) - (rwam * (amount_of_nodes - 1)) / math.min(pwl, amount_of_nodes)) / rwam) == 0 {
 			// Random periodic wakeup (10 times a month on average if the node is almost always down)
 			// we execute this code every 5 minutes => 288 times a day => 8640 times a month on average (30 days)
 			// but we have 30 minutues of periodic wakeup every day (6 times we do not go through this code) => so 282 times a day => 8460 times a month on average (30 days)
@@ -280,7 +280,7 @@ fn (mut p PowerManager) schedule_power_job(nodeid u32, powerstate system.PowerSt
 		action: if powerstate == .on { system.job_power_on } else { system.job_power_off }
 		args: args
 		actionsource: ''
-		timeout: timeout_power_job
+		timeout: manager.timeout_power_job
 	)!
 	if job.state == .error {
 		return error('${job.error}')
