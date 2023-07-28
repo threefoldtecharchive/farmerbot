@@ -26,11 +26,17 @@ pub struct TfChainMock {
 pub mut:
 	mock_set_node_power MockSetNodePower = fn(node_id u32, state PowerState) ! {}
 }
+
+pub fn (mut t TfChainMock) get_balance() !system.Balance {
+	return system.Balance{}
+}
 pub fn (mut t TfChainMock) set_node_power(node_id u32, state PowerState) ! {
 	t.mock_set_node_power(node_id, state)!
 }
 pub fn (mut t TfChainMock) 	active_rent_contract_for_node(nodeid u32) !u64 {
 	return 0
+}
+pub fn (mut t TfChainMock) should_have_enough_balance() ! {
 }
 
 // TODO add some mock code 

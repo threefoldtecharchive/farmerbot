@@ -24,9 +24,8 @@ mut:
 pub fn (mut f FarmManager) on_started() {
 }
 
-pub fn (mut f FarmManager) on_stop() {	
+pub fn (mut f FarmManager) on_stop() {
 }
-
 
 pub fn (mut f FarmManager) init(mut action actions.Action) ! {
 	if action.name == system.action_farm_define {
