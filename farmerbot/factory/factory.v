@@ -115,6 +115,7 @@ pub fn new(path string, grid3_http_address string, redis_address string) !&Farme
 	mut tfchain := &system.TfChain{
 		address: grid3_http_address
 	}
+	tfchain.should_have_enough_balance()!
 	mut managers := map[string]&manager.Manager{}
 	mut data_manager := &manager.DataManager{
 		client: client.new(redis_address)!
