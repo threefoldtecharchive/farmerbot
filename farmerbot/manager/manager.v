@@ -1,6 +1,6 @@
 module manager
 
-import freeflowuniverse.baobab.actions
+import freeflowuniverse.baobab.actions { Action } 
 import freeflowuniverse.baobab.client
 import freeflowuniverse.baobab.jobs
 import threefoldtech.farmerbot.system
@@ -23,7 +23,7 @@ mut:
 	// executed on shutdown of the farmerbot
 	on_stop()
 	// is executed at initialization time
-	init(mut action actions.Action) !
+	init(mut action Action) !
 	// execute a job
 	execute(mut action jobs.ActionJob) !
 	// this will be run every 5 minutes
