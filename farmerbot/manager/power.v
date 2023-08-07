@@ -70,7 +70,6 @@ pub fn (mut p PowerManager) update() {
 
 fn (mut p PowerManager) poweron_all_nodes() {
 	for mut node in p.db.nodes.values() {
-		|| it.powerstate == .shuttingdown) {
 		p.schedule_power_job(node.id, .on) or {
 			p.logger.error('${manager.power_manager_prefix} Job to power on node ${node.id} failed: ${err}')
 		}
