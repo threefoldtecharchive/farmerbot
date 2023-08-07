@@ -48,7 +48,7 @@ pub mut:
 	last_time_powerstate_changed Time
 	last_time_awake              Time
 	never_shutdown               bool
-	times_random_wakeups         int 
+	times_random_wakeups         int
 }
 
 pub fn (mut n Node) update_resources(zos_stats &ZosResourcesStatistics) {
