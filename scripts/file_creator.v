@@ -71,7 +71,7 @@ const (
 	// config.md string outputs
 
 	s_farm_manager          = 'farmerbot.farmmanager.define'
-	s_power_manager         = 'farmerbot.powermanager.define'
+	s_power_manager         = 'farmerbot.powermanager.configure'
 	s_node_manager          = 'farmerbot.nodemanager.define'
 	s_farm_id               = 'farmId'
 	s_id                    = 'id'
