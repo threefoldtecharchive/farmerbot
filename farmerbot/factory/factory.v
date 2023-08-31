@@ -77,6 +77,9 @@ pub fn (mut f Farmerbot) init() ! {
 			}
 		}
 	}
+	if f.db.nodes.len < 2 {
+		return error('Configuration should contain at least 2 nodes, found ${f.db.nodes.len}. If more were configured make sure to check the configuration for mistakes.')
+	}
 	f.logger.debug('${f.db.nodes}')
 }
 
