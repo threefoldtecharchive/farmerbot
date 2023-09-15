@@ -4,7 +4,7 @@ import math { ceil }
 import time { Duration, Time }
 
 pub const (
-	default_cpu_overprovision = 2
+	default_cpu_overprovision     = 2
 	default_wakeup_threshold      = 80
 	default_periodic_wakeup_limit = 1
 	min_wakeup_threshold          = 50
@@ -126,12 +126,12 @@ fn (a Capacity) - (b Capacity) Capacity {
 pub struct DB {
 pub mut:
 	default_cpu_overprovision u8 = system.default_cpu_overprovision
-	wake_up_threshold     u8 = system.default_wakeup_threshold
-	periodic_wakeup_start Duration
-	periodic_wakeup_end   Duration
-	periodic_wakeup_limit u8 = system.default_periodic_wakeup_limit
-	nodes                 map[u32]&Node
-	farm                  &Farm
+	wake_up_threshold         u8 = system.default_wakeup_threshold
+	periodic_wakeup_start     Duration
+	periodic_wakeup_end       Duration
+	periodic_wakeup_limit     u8 = system.default_periodic_wakeup_limit
+	nodes                     map[u32]&Node
+	farm                      &Farm
 }
 
 pub fn (d &DB) get_node(node_id u32) !&Node {
