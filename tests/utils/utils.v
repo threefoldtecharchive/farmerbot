@@ -94,6 +94,7 @@ pub fn run_test(name string, test Test) ! {
 	mut managers := map[string]&manager.Manager{}
 	mut db := &system.DB {
 		farm: &system.Farm {}
+		default_cpu_overprovision: 1
 	}
 	mut data_manager := &manager.DataManager{
 		client: client.new(redis_address)!
