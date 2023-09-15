@@ -51,7 +51,7 @@ fn (mut n NodeManager) data_set(mut action actions.Action) ! {
 	n.logger.debug('${manager.node_manager_prefix} ${action}')
 
 	twin_id := action.params.get_u32('twinid')!
-	cpu_overprovision := action.params.get_u8_default('cpuoverprovision', 1)!
+	cpu_overprovision := action.params.get_u8_default('cpuoverprovision', n.db.default_cpu_overprovision)!
 	if cpu_overprovision < 1 || cpu_overprovision > 4 {
 		return error('cpuoverprovision should be a value between 1 and 4')
 	}
